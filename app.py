@@ -185,7 +185,7 @@ if is_admin:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📱 Compartilhar Torneio")
     
-    # Caso queira fixar o link definitivo na internet, pode substituir a string abaixo:
+    # Link do seu aplicativo publicado
     url_torneio = "https://truco-ctg.streamlit.app" 
     
     if st.sidebar.button("🍏 Gerar QR Code de Visualização"):
@@ -277,7 +277,7 @@ if not st.session_state.torneio_iniciado:
         
         if is_admin and total_inscritos > 0:
             jogador_remover = st.selectbox("Selecione para remover:", [""] + st.session_state.jogadores)
-            if st.button("❌ Remover Jogador Selecionado") and jogador_remover:
+            if st.button("❌ Remover Jogador Selecionados") and jogador_remover:
                 st.session_state.jogadores.remove(jogador_remover)
                 salvar_estado_no_disco()
                 st.rerun()
