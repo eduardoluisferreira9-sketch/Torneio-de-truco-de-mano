@@ -337,7 +337,7 @@ else:
             <div class="box-campeao">
                 <h1 style="margin:0; font-size:2.8rem; letter-spacing: 2px;">🥇 1º LUGAR - CAMPEÃO 🥇</h1>
                 <h2 style="color:#111111 !important; margin:12px 0; font-size:2.2rem;">🌟 {st.session_state.campeao} 🌟</h2>
-                <p style="color:#222222 !important; font-weight:bold; margin:0; font-size:1.1rem;">O padrão absoluto das mesas de truco!</p>
+                <p style="color:#222222 !important; font-weight:bold; margin:0; font-size:1.1rem;">O patrão absoluto das mesas de truco!</p>
             </div>
         """, unsafe_allow_html=True)
         
