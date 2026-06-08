@@ -181,33 +181,25 @@ else:
 
 # --- 🛠️ TRAVA MATEMÁTICA DEFINITIVA E CORRIGIDA ---
 def conferir_e_ajustar_valores(s1, s2, t1, t2, n1, n2, mesa_id):
-    """
-    Analisa rigorosamente e retorna (erro_detectado, s1, s2, t1, t2, mensagem_de_erro)
-    """
-    # 1. Alguém tem que ter ganho exatamente 2 sets
     if (s1 == 2 and s2 == 2) or (s1 < 2 and s2 < 2):
         return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Placar de Sets inválido ({s1}x{s2}). Alguém precisa fechar com exatamente 2 sets."
 
-    # CASO 1: Jogador 1 ganhou por 2x0
     if s1 == 2 and s2 == 0:
-        t1 = 72 # Força o puxamento automático dos 72 tentos
+        t1 = 72 
         if t2 > 46:
             return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! No 2x0, o perdedor ({n2}) não pode somar mais do que 46 tentos."
 
-    # CASO 2: Jogador 2 ganhou por 2x0
     elif s2 == 2 and s1 == 0:
-        t2 = 72 # Força o puxamento automático dos 72 tentos
+        t2 = 72 
         if t1 > 46:
             return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! No 2x0, o perdedor ({n1}) não pode somar mais do que 46 tentos."
 
-    # CASO 3: Jogador 1 ganhou por 2x1
     elif s1 == 2 and s2 == 1:
         if t1 < 48:
             return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n1} fez 2 sets, ele precisa ter no mínimo 48 tentos."
         if t2 < 24:
             return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n2} fez 1 set, ele precisa ter no mínimo 24 tentos."
 
-    # CASO 4: Jogador 2 ganhou por 2x1
     elif s2 == 2 and s1 == 1:
         if t2 < 48:
             return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n2} fez 2 sets, ele precisa ter no mínimo 48 tentos."
@@ -326,7 +318,7 @@ if not st.session_state.torneio_iniciado:
 else:
     st.markdown(f"### 🏟️ {st.session_state.nome_torneio}")
     
-    # 1. CASO HAJA UM CAMPEÃO DEFINIDO
+    # 1. CASO HAJA UM CAMPEÃO DEFINIDO (TELA DE PREMIAÇÃO / PÓDIO FINAL)
     if st.session_state.campeao:
         st.markdown("<h2 style='text-align: center; color: #d4af37 !important;'>✨ CERIMÔNIA DE PREMIAÇÃO FINAL ✨</h2>", unsafe_allow_html=True)
         rei_das_flores = st.session_state.classificacao.sort_values(by='Flores', ascending=False).index[0]
@@ -350,10 +342,11 @@ else:
             st.session_state.jogadores = jsalvos
             st.rerun()
 
-    # 2. CASO ESTEJA NO MATA-MATA
+    # 2. CASO ESTEJA NO MATA-MATA (GERENCIAMENTO DE JOGOS E MESAS FINAIS)
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase: {st.session_state.fase_matamata}")
         
+        # Bloco Unificado do Cronômetro de 45 Minutos com Ajuste de Tolerância
         if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tempo_limite = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             tempo_atual = datetime.now()
@@ -363,6 +356,20 @@ else:
                 st.markdown(f'<div class="cronometro-box"><h3 style="margin:0; color:#d4af37 !important;">⏱️ TEMPO RESTANTE DO MATA-MATA: {minutos:02d}:{segundos:02d}</h3></div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#ff4b4b !important;">⏰ TEMPO ESGOTADO NESTA FASE!</h3></div>', unsafe_allow_html=True)
+            
+            if is_admin:
+                c_c1, c_c2 = st.columns(2)
+                with c_c1:
+                    if st.button("⏹️ Resetar Tempo"):
+                        st.session_state.hora_inicio_rodada = None
+                        st.session_state.cronometro_ativo = False
+                        salvar_estado_no_disco()
+                        st.rerun()
+                with c_c2:
+                    if st.button("🔓 Conceder +5 Minutos"):
+                        st.session_state.hora_inicio_rodada += timedelta(minutes=5)
+                        salvar_estado_no_disco()
+                        st.rerun()
         else:
             st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#a0a0a0 !important;">⏱️ CRONÔMETRO PAUSADO / AGUARDANDO INÍCIO</h3></div>', unsafe_allow_html=True)
             if is_admin and st.button("▶️ DISPARAR CRONÔMETRO (45 MIN)"):
@@ -376,7 +383,14 @@ else:
                 resultados_fase = []
                 for idx, confronto in enumerate(st.session_state.confrontos_mm):
                     j1, j2 = confronto["j1"], confronto["j2"]
-                    st.markdown(f'<div class="card-mesa"><b>Mesa {idx+1}</b></div>', unsafe_allow_html=True)
+                    
+                    # Nomeação matemática exata das Mesas Finais no Painel do Operador
+                    if st.session_state.fase_matamata == "FINAIS":
+                        texto_mesa = "🏆 MESA DA GRANDE FINAL" if confronto.get("tipo") == "normal" else "🥉 DISPUTA DO 3º LUGAR"
+                    else:
+                        texto_mesa = f"Mesa {idx+1}"
+                        
+                    st.markdown(f'<div class="card-mesa"><b>{texto_mesa}</b></div>', unsafe_allow_html=True)
                     c1, c2 = st.columns(2)
                     with c1:
                         st.markdown(f"**{j1}**")
@@ -442,10 +456,15 @@ else:
                         salvar_estado_no_disco()
                         st.rerun()
         else:
+            # Exibição Pública das Mesas Finais Limpa de Poluição
             for idx, c in enumerate(st.session_state.confrontos_mm):
-                st.markdown(f"<div class='card-mesa'><b>Mesa {idx+1}:</b> {c['j1']} ⚔️ {c['j2']}</div>", unsafe_allow_html=True)
+                if st.session_state.fase_matamata == "FINAIS":
+                    label_tela_publica = "🏆 Grande Final" if c["tipo"] == "normal" else "Disputa de 3º Lugar"
+                else:
+                    label_tela_publica = f"Mesa {idx+1}"
+                st.markdown(f"<div class='card-mesa'><b>{label_tela_publica}:</b> {c['j1']} ⚔️ {c['j2']}</div>", unsafe_allow_html=True)
 
-    # 3. FASE CLASSIFICATÓRIA SUIÇA (ABAS PÚBLICAS)
+    # 3. FASE CLASSIFICATÓRIA SUIÇA
     else:
         tab_mesas, tab_tabela, tab_hist = st.tabs(["⚔️ Mesas da Rodada", "📊 Tabela Geral", "📜 Histórico de Jogos"])
         
@@ -462,6 +481,20 @@ else:
                         st.markdown(f'<div class="cronometro-box"><h3 style="margin:0; color:#d4af37 !important;">⏱️ TEMPO RESTANTE: {minutos:02d}:{segundos:02d}</h3></div>', unsafe_allow_html=True)
                     else:
                         st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#ff4b4b !important;">⏰ TEMPO ESGOTADO NESTA RODADA!</h3></div>', unsafe_allow_html=True)
+                    
+                    if is_admin:
+                        c_c1, c_c2 = st.columns(2)
+                        with c_c1:
+                            if st.button("⏹️ Resetar Tempo"):
+                                st.session_state.hora_inicio_rodada = None
+                                st.session_state.cronometro_ativo = False
+                                salvar_estado_no_disco()
+                                st.rerun()
+                        with c_c2:
+                            if st.button("🔓 Conceder +5 Minutos"):
+                                st.session_state.hora_inicio_rodada += timedelta(minutes=5)
+                                salvar_estado_no_disco()
+                                st.rerun()
                 else:
                     st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#a0a0a0 !important;">⏱️ CRONÔMETRO PAUSADO / AGUARDANDO LIBERAÇÃO DO ADMIN</h3></div>', unsafe_allow_html=True)
                     if is_admin and st.button("▶️ DISPARAR CRONÔMETRO DA RODADA (45 MIN)"):
