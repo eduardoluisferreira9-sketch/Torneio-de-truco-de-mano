@@ -4,8 +4,7 @@ import random
 import json
 import os
 import qrcode
-import subprocess
-import time
+import socket
 from io import BytesIO
 from datetime import datetime, timedelta
 
@@ -128,8 +127,7 @@ valores_padrao = {
     "terceiro_lugar": None,
     "quarto_lugar": None,
     "perdedores_semi": [],
-    "salvo_na_galeria": False,
-    "url_salva_torneio": "http://localhost:8501"
+    "salvo_na_galeria": False
 }
 
 for chave, valor in valores_padrao.items():
@@ -161,6 +159,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- GERADOR AUTOMÁTICO DE LINK DE REDE ---
+def obter_ip_da_rede():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return f"http://{ip}:8501"
+    except Exception:
+        return "http://localhost:8501"
+
+url_oficial = obter_ip_da_rede()
+
 # --- CONTROLE DE ACESSO E SIDEBAR ---
 st.sidebar.markdown("### 🔐 Controle de Acesso")
 senha_inserida = st.sidebar.text_input("Chave do Operador:", type="password")
@@ -169,31 +180,27 @@ is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
 if is_admin:
     st.sidebar.success("⚡ Modo Administrador Ativo")
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🌐 Compartilhamento / Acesso")
+    st.sidebar.markdown("### 🌐 Link de Acesso Público")
     
-    url_torneio = st.sidebar.text_input(
-        "Link atual do Torneio:", 
-        value=st.session_state["url_salva_torneio"]
-    )
-    st.session_state["url_salva_torneio"] = url_torneio
+    # Campo manual para caso o admin mude de ideia ou use outro túnel
+    url_torneio = st.sidebar.text_input("Link Atual:", value=st.session_state.get("url_override", url_oficial))
+    st.session_state["url_override"] = url_torneio
     
-    if url_torneio:
-        st.sidebar.markdown("**🔗 Link para enviar no WhatsApp:**")
-        st.sidebar.code(url_torneio.strip(), language="text")
-        
-        # Geração automática e em tempo real do QR Code
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(url_torneio.strip())
-        qr.make(fit=True)
-        img_qr = qr.make_image(fill_color="black", back_color="white")
-        buf = BytesIO()
-        img_qr.save(buf, format="PNG")
-        
-        st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem para abrir as mesas!", use_container_width=True)
+    st.sidebar.markdown("**Partilhar no WhatsApp:**")
+    st.sidebar.code(url_torneio, language="text")
+    
+    # Gerador de QR Code limpo e direto
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(url_torneio)
+    qr.make(fit=True)
+    img_qr = qr.make_image(fill_color="black", back_color="white")
+    buf = BytesIO()
+    img_qr.save(buf, format="PNG")
+    st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem para abrir!", use_container_width=True)
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
-# --- 🛠️ TRAVA MATEMÁTICA DEFINITIVA ---
+# --- TRAVA MATEMÁTICA ---
 def conferir_e_ajustar_valores(s1, s2, t1, t2, n1, n2, mesa_id):
     if (s1 == 2 and s2 == 2) or (s1 < 2 and s2 < 2):
         return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Placar de Sets inválido ({s1}x{s2}). Alguém precisa fechar com exatamente 2 sets."
@@ -260,9 +267,16 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
 # --- CONTEÚDO PRINCIPAL ---
 st.title("🏆 Truco de Mano")
 
+# Guia visual rápido na página inicial para o administrador conectar o pessoal
+if not st.session_state.torneio_iniciado and is_admin:
+    st.info(f"📢 **COMO FAZER OS JOGADORES ENTRAREM PELO TELEMÓVEL AGORA:**\n\n"
+            f"1. Ligue o **Ponto de Acesso/Roteador** do seu telemóvel (ou use o Wi-Fi do local) e ligue o seu portátil a ele.\n"
+            f"2. Peça para os jogadores se ligarem ao **mesmo Wi-Fi**.\n"
+            f"3. Pronto! Eles só precisam de ler o QR Code que está na barra lateral ou digitar o endereço: `{url_oficial}` no navegador do telemóvel!")
+
 # === TELA 1: CADASTRO / CONFIGURAÇÃO DO TORNEIO ===
 if not st.session_state.torneio_iniciado:
-    aba1, aba2 = st.tabs(["... Painel de Inscrições", "📜 Galeria de Campeões"])
+    aba1, aba2 = st.tabs(["🎮 Painel de Inscrições", "📜 Galeria de Campeões"])
     
     with aba1:
         st.markdown("### 🎪 Identificação do Evento")
@@ -316,7 +330,6 @@ if not st.session_state.torneio_iniciado:
                 
     with aba2:
         st.markdown("### 🏛️ Registro de Campeões")
-        
         if is_admin:
             if os.path.exists(ARQUIVO_GALERIA):
                 if st.button("🗑️ Limpar Todo o Histórico da Galeria", type="primary"):
@@ -343,7 +356,6 @@ if not st.session_state.torneio_iniciado:
 else:
     st.markdown(f"### 🏟️ {st.session_state.nome_torneio}")
     
-    # 1. CASO HAJA UM CAMPEÃO DEFINIDO
     if st.session_state.campeao:
         st.markdown("<h2 style='text-align: center; color: #d4af37 !important;'>✨ CERIMÔNIA DE PREMIAÇÃO FINAL ✨</h2>", unsafe_allow_html=True)
         rei_das_flores = st.session_state.classificacao.sort_values(by='Flores', ascending=False).index[0]
@@ -354,12 +366,11 @@ else:
             st.session_state.salvo_na_galeria = True
             salvar_estado_no_disco()
         
-        st.markdown(f'<div class="box-campeao"><h1>🥇 1º LUGAR - CAMPEÃO 🥇</h1><h2>🌟 {st.session_state.campeao} 🌟</h2><p style="margin:5px 0 0 0; font-style:italic; font-weight:bold; color:#111111 !important;">🤠 PATRÃO DAS MESAS DE TRUCO</p></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="box-campeao"><h1>🥇 1º LUGAR - CAMPEÃO 🥇</h1><h2>🌟 {st.session_state.campeao} 🌟</h2></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-vice">🥈 2º LUGAR: {st.session_state.vice_campeao}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-terceiro">🥉 3º LUGAR: {st.session_state.terceiro_lugar}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-quarto">🎖️ 4º LUGAR: {st.session_state.quarto_lugar}</div>', unsafe_allow_html=True)
-        
-        st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)<br><small style="font-style: italic;">"Floriu o galpão inteiro cantando um buquê de flores!"</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)</div>', unsafe_allow_html=True)
         
         if is_admin and st.button("🏁 Novo Torneio (Limpar Tudo)"):
             if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
@@ -368,7 +379,6 @@ else:
             st.session_state.jogadores = jsalvos
             st.rerun()
 
-    # 2. CASO ESTEJA NO MATA-MATA
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase: {st.session_state.fase_matamata}")
         
@@ -408,24 +418,20 @@ else:
                 resultados_fase = []
                 for idx, confronto in enumerate(st.session_state.confrontos_mm):
                     j1, j2 = confronto["j1"], confronto["j2"]
+                    texto_mesa = "🏆 GRANDE FINAL" if st.session_state.fase_matamata == "FINAIS" and not confronto.get("tipo") == "bronze" else ("🥉 DISPUTA DO 3º LUGAR" if confronto.get("tipo") == "bronze" else f"Mesa {idx+1}")
                     
-                    if st.session_state.fase_matamata == "FINAIS":
-                        texto_mesa = "🏆 MESA DA GRANDE FINAL" if confronto.get("tipo") == "normal" else "🥉 DISPUTA DO 3º LUGAR"
-                    else:
-                        texto_mesa = f"Mesa {idx+1}"
-                        
                     st.markdown(f'<div class="card-mesa"><b>{texto_mesa}</b></div>', unsafe_allow_html=True)
                     c1, c2 = st.columns(2)
                     with c1:
                         st.markdown(f"**{j1}**")
-                        s1 = st.number_input("Sets:", min_value=0, max_value=2, step=1, key=f"mm_s1_{st.session_state.fase_matamata}_{idx}")
-                        t1 = st.number_input("Tentos:", min_value=0, max_value=72, step=1, key=f"mm_t1_{st.session_state.fase_matamata}_{idx}")
-                        f1 = st.number_input("Flores:", min_value=0, max_value=20, step=1, key=f"mm_f1_{st.session_state.fase_matamata}_{idx}")
+                        s1 = st.number_input("Sets:", min_value=0, max_value=2, step=1, key=f"mm_s1_{idx}")
+                        t1 = st.number_input("Tentos:", min_value=0, max_value=72, step=1, key=f"mm_t1_{idx}")
+                        f1 = st.number_input("Flores:", min_value=0, max_value=20, step=1, key=f"mm_f1_{idx}")
                     with c2:
                         st.markdown(f"**{j2}**")
-                        s2 = st.number_input("Sets:", min_value=0, max_value=2, step=1, key=f"mm_s2_{st.session_state.fase_matamata}_{idx}")
-                        t2 = st.number_input("Tentos:", min_value=0, max_value=72, step=1, key=f"mm_t2_{st.session_state.fase_matamata}_{idx}")
-                        f2 = st.number_input("Flores:", min_value=0, max_value=20, step=1, key=f"mm_f2_{st.session_state.fase_matamata}_{idx}")
+                        s2 = st.number_input("Sets:", min_value=0, max_value=2, step=1, key=f"mm_s2_{idx}")
+                        t2 = st.number_input("Tentos:", min_value=0, max_value=72, step=1, key=f"mm_t2_{idx}")
+                        f2 = st.number_input("Flores:", min_value=0, max_value=20, step=1, key=f"mm_f2_{idx}")
                     resultados_fase.append({"j1": j1, "j2": j2, "s1": s1, "s2": s2, "t1": t1, "t2": t2, "f1": f1, "f2": f2, "is_bronze": confronto.get("tipo") == "bronze", "mesa": idx+1})
                 
                 if st.form_submit_button("💾 COMPUTAR RESULTADOS"):
@@ -444,7 +450,6 @@ else:
                         vencedores, perdedores = [], []
                         for r in dados_ajustados:
                             j1, j2, s1, s2 = r["j1"], r["j2"], r["s1"], r["s2"]
-                            
                             s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
                             s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
                             
@@ -452,28 +457,20 @@ else:
                             st.session_state.classificacao.loc[j2, ['Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [s2_computado, r["t2"], r["t1"], r["f2"]]
                             
                             if r["is_bronze"]:
-                                if s1 > s2:
-                                    st.session_state.terceiro_lugar, st.session_state.quarto_lugar = j1, j2
-                                else:
-                                    st.session_state.terceiro_lugar, st.session_state.quarto_lugar = j2, j1
+                                if s1 > s2: st.session_state.terceiro_lugar, st.session_state.quarto_lugar = j1, j2
+                                else: st.session_state.terceiro_lugar, st.session_state.quarto_lugar = j2, j1
                             else:
-                                if s1 > s2:
-                                    vencedores.append(j1); perdedores.append(j2)
-                                else:
-                                    vencedores.append(j2); perdedores.append(j1)
+                                if s1 > s2: vencedores.append(j1); perdedores.append(j2)
+                                else: vencedores.append(j2); perdedores.append(j1)
                                     
-                        if st.session_state.fase_matamata == "OITAVAS DE FINAL":
-                            iniciar_fase_matamata(vencedores, "QUARTAS DE FINAL")
-                        elif st.session_state.fase_matamata == "QUARTAS DE FINAL":
-                            iniciar_fase_matamata(vencedores, "SEMIFINAL")
+                        if st.session_state.fase_matamata == "OITAVAS DE FINAL": iniciar_fase_matamata(vencedores, "QUARTAS DE FINAL")
+                        elif st.session_state.fase_matamata == "QUARTAS DE FINAL": iniciar_fase_matamata(vencedores, "SEMIFINAL")
                         elif st.session_state.fase_matamata == "SEMIFINAL":
                             st.session_state.fase_matamata = "FINAIS"
                             st.session_state.confrontos_mm = [
                                 {"tipo": "normal", "j1": vencedores[0], "j2": vencedores[1]},
                                 {"tipo": "bronze", "j1": perdedores[0], "j2": perdedores[1]}
                             ]
-                            st.session_state.hora_inicio_rodada = None
-                            st.session_state.cronometro_ativo = False
                         elif st.session_state.fase_matamata == "FINAIS":
                             st.session_state.campeao = vencedores[0]
                             st.session_state.vice_campeao = perdedores[0]
@@ -481,13 +478,9 @@ else:
                         st.rerun()
         else:
             for idx, c in enumerate(st.session_state.confrontos_mm):
-                if st.session_state.fase_matamata == "FINAIS":
-                    label_tela_publica = "🏆 Grande Final" if c["tipo"] == "normal" else "Disputa de 3º Lugar"
-                else:
-                    label_tela_publica = f"Mesa {idx+1}"
-                st.markdown(f"<div class='card-mesa'><b>{label_tela_publica}:</b> {c['j1']} ⚔️ {c['j2']}</div>", unsafe_allow_html=True)
+                lbl = "🏆 Grande Final" if c["tipo"] == "normal" and st.session_state.fase_matamata == "FINAIS" else ("Disputa de 3º Lugar" if c["tipo"] == "bronze" else f"Mesa {idx+1}")
+                st.markdown(f"<div class='card-mesa'><b>{lbl}:</b> {c['j1']} ⚔️ {c['j2']}</div>", unsafe_allow_html=True)
 
-    # 3. FASE CLASSIFICATÓRIA SUIÇA
     else:
         tab_mesas, tab_tabela, tab_hist = st.tabs(["⚔️ Mesas da Rodada", "📊 Tabela Geral", "📜 Histórico de Jogos"])
         
@@ -503,28 +496,7 @@ else:
                         minutos, segundos = int(tempo_restante.total_seconds() // 60), int(tempo_restante.total_seconds() % 60)
                         st.markdown(f'<div class="cronometro-box"><h3 style="margin:0; color:#d4af37 !important;">⏱️ TEMPO RESTANTE: {minutos:02d}:{segundos:02d}</h3></div>', unsafe_allow_html=True)
                     else:
-                        st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#ff4b4b !important;">⏰ TEMPO ESGOTADO NESTA RODADA!</h3></div>', unsafe_allow_html=True)
-                    
-                    if is_admin:
-                        c_c1, c_c2 = st.columns(2)
-                        with c_c1:
-                            if st.button("⏹️ Resetar Tempo"):
-                                st.session_state.hora_inicio_rodada = None
-                                st.session_state.cronometro_ativo = False
-                                salvar_estado_no_disco()
-                                st.rerun()
-                        with c_c2:
-                            if st.button("🔓 Conceder +5 Minutos"):
-                                st.session_state.hora_inicio_rodada += timedelta(minutes=5)
-                                salvar_estado_no_disco()
-                                st.rerun()
-                else:
-                    st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#a0a0a0 !important;">⏱️ CRONÔMETRO PAUSADO / AGUARDANDO LIBERAÇÃO DO ADMIN</h3></div>', unsafe_allow_html=True)
-                    if is_admin and st.button("▶️ DISPARAR CRONÔMETRO DA RODADA (45 MIN)"):
-                        st.session_state.hora_inicio_rodada = datetime.now()
-                        st.session_state.cronometro_ativo = True
-                        salvar_estado_no_disco()
-                        st.rerun()
+                        st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#ff4b4b !important;">⏰ TEMPO ESGOTADO!</h3></div>', unsafe_allow_html=True)
                 
                 if is_admin:
                     with st.form(key=f"form_rodada_exec_{st.session_state.rodada_atual}"):
@@ -538,14 +510,14 @@ else:
                                 c1, c2 = st.columns(2)
                                 with c1:
                                     st.markdown(f"**{j1}**")
-                                    s1 = st.number_input("Sets:", 0, 2, 0, key=f"r{st.session_state.rodada_atual}_s1_{idx}")
-                                    t1 = st.number_input("Tentos:", 0, 72, 0, key=f"r{st.session_state.rodada_atual}_t1_{idx}")
-                                    f1 = st.number_input("Flores:", 0, 20, 0, key=f"r{st.session_state.rodada_atual}_f1_{idx}")
+                                    s1 = st.number_input("Sets:", 0, 2, 0, key=f"s1_{idx}")
+                                    t1 = st.number_input("Tentos:", 0, 72, 0, key=f"t1_{idx}")
+                                    f1 = st.number_input("Flores:", 0, 20, 0, key=f"f1_{idx}")
                                 with c2:
                                     st.markdown(f"**{j2}**")
-                                    s2 = st.number_input("Sets:", 0, 2, 0, key=f"r{st.session_state.rodada_atual}_s2_{idx}")
-                                    t2 = st.number_input("Tentos:", 0, 72, 0, key=f"r{st.session_state.rodada_atual}_t2_{idx}")
-                                    f2 = st.number_input("Flores:", 0, 20, 0, key=f"r{st.session_state.rodada_atual}_f2_{idx}")
+                                    s2 = st.number_input("Sets:", 0, 2, 0, key=f"s2_{idx}")
+                                    t2 = st.number_input("Tentos:", 0, 72, 0, key=f"t2_{idx}")
+                                    f2 = st.number_input("Flores:", 0, 20, 0, key=f"f2_{idx}")
                                 placares.append((s1, s2, t1, t2, f1, f2))
                         
                         if st.form_submit_button("💾 COMPUTAR RODADA"):
@@ -560,10 +532,8 @@ else:
                                     if bloqueia:
                                         st.error(msg)
                                         sucesso_validacao = False
-                                    else:
-                                        dados_ajustados.append((ns1, ns2, nt1, nt2, f1, f2))
-                                else:
-                                    dados_ajustados.append(None)
+                                    else: dados_ajustados.append((ns1, ns2, nt1, nt2, f1, f2))
+                                else: dados_ajustados.append(None)
                                         
                             if sucesso_validacao:
                                 dados_hist = []
@@ -574,7 +544,6 @@ else:
                                         dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
                                     else:
                                         s1, s2, t1, t2, f1, f2 = c
-                                        
                                         s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
                                         s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
                                         
@@ -585,10 +554,8 @@ else:
                                 st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
                                 st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
                                 st.session_state.rodada_atual += 1
-                                if st.session_state.rodada_atual <= 5:
-                                    gerar_rodada_web()
-                                else:
-                                    salvar_estado_no_disco()
+                                if st.session_state.rodada_atual <= 5: gerar_rodada_web()
+                                salvar_estado_no_disco()
                                 st.rerun()
                 else:
                     for idx, (j1, j2) in enumerate(st.session_state.confrontos):
