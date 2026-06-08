@@ -4,6 +4,8 @@ import random
 import json
 import os
 import qrcode
+import subprocess
+import time
 from io import BytesIO
 from datetime import datetime, timedelta
 
@@ -126,7 +128,8 @@ valores_padrao = {
     "terceiro_lugar": None,
     "quarto_lugar": None,
     "perdedores_semi": [],
-    "salvo_na_galeria": False
+    "salvo_na_galeria": False,
+    "url_salva_torneio": "http://localhost:8501"
 }
 
 for chave, valor in valores_padrao.items():
@@ -158,19 +161,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- GERENCIADOR DE URL / LINKS ---
-# Tenta detectar se já está rodando em nuvem ou local
-try:
-    from streamlit.web.server.server import Server
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    ip_local = s.getsockname()[0]
-    s.close()
-    url_sugerida = f"http://{ip_local}:8501"
-except Exception:
-    url_sugerida = "http://localhost:8501"
-
 # --- CONTROLE DE ACESSO E SIDEBAR ---
 st.sidebar.markdown("### 🔐 Controle de Acesso")
 senha_inserida = st.sidebar.text_input("Chave do Operador:", type="password")
@@ -183,7 +173,7 @@ if is_admin:
     
     url_torneio = st.sidebar.text_input(
         "Link atual do Torneio:", 
-        value=st.session_state.get("url_salva_torneio", url_sugerida)
+        value=st.session_state["url_salva_torneio"]
     )
     st.session_state["url_salva_torneio"] = url_torneio
     
@@ -191,7 +181,7 @@ if is_admin:
         st.sidebar.markdown("**🔗 Link para enviar no WhatsApp:**")
         st.sidebar.code(url_torneio.strip(), language="text")
         
-        # Geração dinâmica automática do QR Code com base no link inserido
+        # Geração automática e em tempo real do QR Code
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(url_torneio.strip())
         qr.make(fit=True)
@@ -199,7 +189,7 @@ if is_admin:
         buf = BytesIO()
         img_qr.save(buf, format="PNG")
         
-        st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem para ver as mesas!", use_container_width=True)
+        st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem para abrir as mesas!", use_container_width=True)
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
@@ -270,27 +260,9 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
 # --- CONTEÚDO PRINCIPAL ---
 st.title("🏆 Truco de Mano")
 
-# Ajuda visual para o administrador configurar o link público se estiver local
-if not st.session_state.torneio_iniciado and is_admin:
-    with st.expander("🌐 Como gerar o Link de Acesso para os jogadores?"):
-        st.markdown(f"""
-        Se você estiver usando o sistema no seu notebook, escolha uma das formas abaixo para que as pessoas acessem pelo celular:
-        
-        **Opção A: Mesma rede Wi-Fi (Sem internet/Mais rápido)**
-        1. Conecte o seu notebook e o celular dos jogadores no **mesmo Wi-Fi** (ou roteie do seu celular).
-        2. Copie este link: `{url_sugerida}`
-        3. Cole ele ali no campo **'Link atual do Torneio'** na barra lateral. O QR Code gerado vai funcionar direto.
-        
-        **Opção B: Via Internet Pública (Qualquer lugar do mundo)**
-        1. No seu notebook, abra outra janela de terminal/prompt de comando e digite:
-           `ssh -R 80:localhost:8501 loop.dontpwn.me` ou `ssh -R 80:localhost:8501 a.pinggy.io`
-        2. O terminal vai gerar um link público que termina com `.pinggy.link` ou similar.
-        3. Copie esse link gerado, cole no campo **'Link atual do Torneio'** na barra lateral e envie no grupo de WhatsApp!
-        """)
-
 # === TELA 1: CADASTRO / CONFIGURAÇÃO DO TORNEIO ===
 if not st.session_state.torneio_iniciado:
-    aba1, aba2 = st.tabs(["🎮 Painel de Inscrições", "📜 Galeria de Campeões"])
+    aba1, aba2 = st.tabs(["... Painel de Inscrições", "📜 Galeria de Campeões"])
     
     with aba1:
         st.markdown("### 🎪 Identificação do Evento")
@@ -593,7 +565,7 @@ else:
                                 else:
                                     dados_ajustados.append(None)
                                         
-                            if `# sucesso_validacao`:
+                            if sucesso_validacao:
                                 dados_hist = []
                                 for idx, c in enumerate(dados_ajustados):
                                     j1, j2 = st.session_state.confrontos[idx]
