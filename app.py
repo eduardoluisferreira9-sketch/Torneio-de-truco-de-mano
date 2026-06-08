@@ -167,7 +167,14 @@ if is_admin:
     st.sidebar.success("⚡ Modo Administrador Ativo")
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📱 Compartilhar Torneio")
-    url_torneio = "https://truco-ctg.streamlit.app" 
+    
+    # DETECÇÃO DINÂMICA DA URL REAL DA PÁGINA (Previne erros de digitação e links quebrados)
+    try:
+        host = st.context.headers.get("host", "truco-ctg.streamlit.app")
+        url_torneio = f"https://{host}"
+    except Exception:
+        url_torneio = "https://truco-ctg.streamlit.app" # Backup de contingência
+        
     if st.sidebar.button("🍏 Gerar QR Code de Visualização"):
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(url_torneio)
@@ -303,7 +310,6 @@ if not st.session_state.torneio_iniciado:
     with aba2:
         st.markdown("### 🏛️ Registro de Campeões")
         
-        # Botão administrativo para limpar o histórico da galeria (Útil para testes)
         if is_admin:
             if os.path.exists(ARQUIVO_GALERIA):
                 if st.button("🗑️ Limpar Todo o Histórico da Galeria", type="primary"):
@@ -341,13 +347,11 @@ else:
             st.session_state.salvo_na_galeria = True
             salvar_estado_no_disco()
         
-        # Frase tradicional de volta para o campeão máximo!
         st.markdown(f'<div class="box-campeao"><h1>🥇 1º LUGAR - CAMPEÃO 🥇</h1><h2>🌟 {st.session_state.campeao} 🌟</h2><p style="margin:5px 0 0 0; font-style:italic; font-weight:bold; color:#111111 !important;">🤠 PATRÃO DAS MESAS DE TRUCO</p></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-vice">🥈 2º LUGAR: {st.session_state.vice_campeao}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-terceiro">🥉 3º LUGAR: {st.session_state.terceiro_lugar}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-quarto">🎖️ 4º LUGAR: {st.session_state.quarto_lugar}</div>', unsafe_allow_html=True)
         
-        # Frase poética tradicional de volta para o Rei das Flores!
         st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)<br><small style="font-style: italic;">"Floriu o galpão inteiro cantando um buquê de flores!"</small></div>', unsafe_allow_html=True)
         
         if is_admin and st.button("🏁 Novo Torneio (Limpar Tudo)"):
@@ -554,31 +558,32 @@ else:
                                 else:
                                     dados_ajustados.append(None)
                                         
-                            if sucesso_validacao:
-                                dados_hist = []
-                                for idx, c in enumerate(dados_ajustados):
-                                    j1, j2 = st.session_state.confrontos[idx]
-                                    if j2 == "CHAPÉU (Folga)":
-                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
-                                        dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
+                            if `# Sucesso na validação`:
+                                if sucesso_validacao:
+                                    dados_hist = []
+                                    for idx, c in enumerate(dados_ajustados):
+                                        j1, j2 = st.session_state.confrontos[idx]
+                                        if j2 == "CHAPÉU (Folga)":
+                                            st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
+                                            dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
+                                        else:
+                                            s1, s2, t1, t2, f1, f2 = c
+                                            
+                                            s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
+                                            s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
+                                            
+                                            st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1_computado, t1, t2, f1]
+                                            st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2_computado, t2, t1, f2]
+                                            dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": f"({s1}s | {t1}t) ✖ ({s2}s | {t2}t)", "Jogador 2": j2})
+                                    
+                                    st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
+                                    st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
+                                    st.session_state.rodada_atual += 1
+                                    if st.session_state.rodada_atual <= 5:
+                                        gerar_rodada_web()
                                     else:
-                                        s1, s2, t1, t2, f1, f2 = c
-                                        
-                                        s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
-                                        s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
-                                        
-                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1_computado, t1, t2, f1]
-                                        st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2_computado, t2, t1, f2]
-                                        dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": f"({s1}s | {t1}t) ✖ ({s2}s | {t2}t)", "Jogador 2": j2})
-                                
-                                st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
-                                st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
-                                st.session_state.rodada_atual += 1
-                                if st.session_state.rodada_atual <= 5:
-                                    gerar_rodada_web()
-                                else:
-                                    salvar_estado_no_disco()
-                                st.rerun()
+                                        salvar_estado_no_disco()
+                                    st.rerun()
                 else:
                     for idx, (j1, j2) in enumerate(st.session_state.confrontos):
                         st.markdown(f"<div class='card-mesa'><b>Mesa {idx+1}:</b> {j1} ⚔️ {j2}</div>", unsafe_allow_html=True)
