@@ -5,7 +5,7 @@ import json
 import os
 import qrcode
 from io import BytesIO
-from datetime import datetime, timedelta
+from datetime import datetime
 
 st.set_page_config(
     page_title="Torneio de Truco de Mano - Sicredi & Cusco",
@@ -124,7 +124,6 @@ st.markdown("""
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
     }
     .card-mesa { background-color: #2c6b56; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #d4af37; }
-    .cronometro-box { background-color: #11221a; border: 2px solid #d4af37; padding: 10px; border-radius: 8px; text-align: center; font-family: 'Courier New', Courier, monospace; margin-bottom: 15px; }
     
     /* Pódio e Destaques dos Campeões */
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 20px; }
@@ -290,7 +289,7 @@ else:
         st.markdown(f'<div class="podio-posicao podio-quarto">🎖️ 4º LUGAR: {st.session_state.quarto_lugar}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)</div>', unsafe_allow_html=True)
         
-        # --- TRAVA DE RESET NA TELA FINAL ---
+        # --- RESET NA TELA FINAL ---
         if is_admin:
             st.markdown("---")
             if st.button("🏁 LIMPAR HISTÓRICO E REINICIAR (NOVO TORNEIO)"):
@@ -298,7 +297,7 @@ else:
                 st.session_state.clear()
                 st.rerun()
 
-    # 2. CASO ESTEJA NO MATA-MATA (EXIBE AS MESAS DE CONFRONTO DA FASE ATUAL)
+    # 2. CASO ESTEJA NO MATA-MATA
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase Atual: {st.session_state.fase_matamata}")
         
@@ -337,7 +336,7 @@ else:
                         else:
                             dados_ajustados.append({"j1": r["j1"], "j2": r["j2"], "s1": ns1, "s2": ns2, "t1": nt1, "t2": nt2, "f1": r["f1"], "f2": r["f2"], "is_bronze": r["is_bronze"]})
                     
-                    if技术_sucesso := sucesso_validacao:
+                    if sucesso_validacao:
                         vencedores, perdedores = [], []
                         
                         for r in dados_ajustados:
@@ -370,7 +369,7 @@ else:
                         salvar_estado_no_disco()
                         st.rerun()
             
-            # --- TRAVA DE RESET NO MEIO DO MATA-MATA ---
+            # --- RESET DURANTE O MATA-MATA ---
             st.markdown("---")
             if st.button("🚨 FORÇAR CANCELAMENTO E RESETAR TORNEIO"):
                 if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
@@ -429,7 +428,7 @@ else:
                             else:
                                 dados_ajustados.append(None)
                                     
-                        if技术_sucesso := sucesso_validacao:
+                        if sucesso_validacao:
                             dados_hist = []
                             for idx, c in enumerate(dados_ajustados):
                                 j1, j2 = st.session_state.confrontos[idx]
@@ -454,7 +453,7 @@ else:
                                 salvar_estado_no_disco()
                             st.rerun()
                             
-                # --- TRAVA DE RESET NA FASE CLASSIFICATÓRIA ---
+                # --- RESET NA CLASSIFICATÓRIA ---
                 st.markdown("---")
                 if st.button("🚨 REINICIAR TODO O TORNEIO (LIMPAR HISTÓRICO)"):
                     if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
