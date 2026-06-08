@@ -168,20 +168,23 @@ if is_admin:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📱 Compartilhar Torneio")
     
-    # URL do torneio configurável diretamente na barra lateral (Padrão correto do seu app)
+    # Campo manual para colar o link exato do navegador e evitar falhas
     url_torneio = st.sidebar.text_input(
-        "Confirme a URL do app:", 
+        "Cole a URL atual do seu navegador aqui:", 
         value="https://truco-ctg.streamlit.app"
     )
+    
+    # Opção extra de copiar o link direto
+    st.sidebar.link_button("🔗 Abrir/Copiar Link Direto", url_torneio)
         
-    if st.sidebar.button("🍏 Gerar QR Code de Visualização"):
+    if st.sidebar.button("🍏 Gerar QR Code"):
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(url_torneio)
+        qr.add_data(url_torneio.strip())
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white")
         buf = BytesIO()
         img_qr.save(buf, format="PNG")
-        st.sidebar.image(buf.getvalue(), caption="Aponte a câmera!", use_container_width=True)
+        st.sidebar.image(buf.getvalue(), caption="Aponte a câmera do celular!", use_container_width=True)
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
