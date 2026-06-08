@@ -17,7 +17,6 @@ NOME_CRIADOR = "Eduardo Luis Ferreira"
 ARQUIVO_BACKUP = "torneio_atual.json"
 ARQUIVO_GALERIA = "galeria_campeoes.json"
 
-# CHAVE DE ACESSO PARA MODIFICAR O TORNEIO
 CHAVE_ADMINISTRADOR = "truco123"
 
 # --- FUNÇÕES DE SALVAMENTO E RECUPERAÇÃO ---
@@ -147,10 +146,6 @@ st.markdown("""
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
     }
     .card-mesa { background-color: #2c6b56; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #d4af37; }
-    .card-mesa-final { 
-        background-color: #11221a; padding: 20px; border-radius: 12px; margin-bottom: 20px; 
-        border: 3px solid #d4af37; box-shadow: 0px 0px 15px #d4af37; text-align: center;
-    }
     .card-historico { background-color: #14382d; padding: 10px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #d4af37; }
     .cronometro-box { background-color: #11221a; border: 2px solid #d4af37; padding: 10px; border-radius: 8px; text-align: center; font-family: 'Courier New', Courier, monospace; margin-bottom: 15px; }
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
@@ -163,10 +158,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CONTROLE DE ACESSO E QR CODE (SIDEBAR) ---
+# --- CONTROLE DE ACESSO E SIDEBAR ---
 st.sidebar.markdown("### 🔐 Controle de Acesso")
 senha_inserida = st.sidebar.text_input("Chave do Operador:", type="password")
-
 is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
 
 if is_admin:
@@ -174,7 +168,6 @@ if is_admin:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📱 Compartilhar Torneio")
     url_torneio = "https://truco-ctg.streamlit.app" 
-    
     if st.sidebar.button("🍏 Gerar QR Code de Visualização"):
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(url_torneio)
@@ -182,46 +175,46 @@ if is_admin:
         img_qr = qr.make_image(fill_color="black", back_color="white")
         buf = BytesIO()
         img_qr.save(buf, format="PNG")
-        st.sidebar.image(buf.getvalue(), caption="Aponte a câmera do celular para acompanhar!", use_container_width=True)
+        st.sidebar.image(buf.getvalue(), caption="Aponte a câmera!", use_container_width=True)
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
-# --- FUNÇÃO AUXILIAR DE VALIDAÇÃO DE PLACAR ---
-def validar_placar_truco(s1, s2, t1, t2, nome1, nome2, mesa_id):
+# --- 🛠️ TRAVA MATEMÁTICA DEFINITIVA E CORRIGIDA ---
+def conferir_e_ajustar_valores(s1, s2, t1, t2, n1, n2, mesa_id):
     """
-    Retorna (True, None) se estiver correto ou (False, "Mensagem de Erro")
-    Regras Aplicadas:
-      - Alguém tem que ter ganho exatamente 2 sets. Não existe empate de sets (ex: 1x1) ou 0x0 terminados.
-      - Se s1 == 2 e s2 == 0: t1 DEVE ser obrigatoriamente 72.
-      - Se s1 == 2 e s2 == 1: t1 DEVE ser no mínimo 48 (24*2). t2 DEVE ser no mínimo 24 (conquistou 1 set).
-      - Inverte-se a mesma lógica caso s2 ganhe.
+    Analisa rigorosamente e retorna (erro_detectado, s1, s2, t1, t2, mensagem_de_erro)
     """
+    # 1. Alguém tem que ter ganho exatamente 2 sets
     if (s1 == 2 and s2 == 2) or (s1 < 2 and s2 < 2):
-        return False, f"Mesa {mesa_id}: Placar de Sets inválido ({s1} x {s2}). Um dos jogadores precisa vencer exatamente 2 sets."
-        
+        return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Placar de Sets inválido ({s1}x{s2}). Alguém precisa fechar com exatamente 2 sets."
+
+    # CASO 1: Jogador 1 ganhou por 2x0
     if s1 == 2 and s2 == 0:
-        if t1 != 72:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome1}** venceu por 2x0, a pontuação de Tentos dele DEVE ser exatamente 72."
-            
-    if s1 == 2 and s2 == 1:
+        t1 = 72 # Força o puxamento automático dos 72 tentos
+        if t2 > 46:
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! No 2x0, o perdedor ({n2}) não pode somar mais do que 46 tentos."
+
+    # CASO 2: Jogador 2 ganhou por 2x0
+    elif s2 == 2 and s1 == 0:
+        t2 = 72 # Força o puxamento automático dos 72 tentos
+        if t1 > 46:
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! No 2x0, o perdedor ({n1}) não pode somar mais do que 46 tentos."
+
+    # CASO 3: Jogador 1 ganhou por 2x1
+    elif s1 == 2 and s2 == 1:
         if t1 < 48:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome1}** ganhou 2 sets, ele deve possuir no mínimo 48 tentos."
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n1} fez 2 sets, ele precisa ter no mínimo 48 tentos."
         if t2 < 24:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome2}** ganhou 1 set, ele deve possuir no mínimo 24 tentos."
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n2} fez 1 set, ele precisa ter no mínimo 24 tentos."
 
-    if s2 == 2 and s1 == 0:
-        if t2 != 72:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome2}** venceu por 2x0, a pontuação de Tentos dele DEVE ser exatamente 72."
-            
-    if s2 == 2 and s1 == 1:
+    # CASO 4: Jogador 2 ganhou por 2x1
+    elif s2 == 2 and s1 == 1:
         if t2 < 48:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome2}** ganhou 2 sets, ele deve possuir no mínimo 48 tentos."
-        if r"t1" in locals() and t1 < 24:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome1}** ganhou 1 set, ele deve possuir no mínimo 24 tentos."
-        elif t1 < 24:
-            return False, f"Mesa {mesa_id}: Inconsistência! Como **{nome1}** ganhou 1 set, ele deve possuir no mínimo 24 tentos."
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n2} fez 2 sets, ele precisa ter no mínimo 48 tentos."
+        if t1 < 24:
+            return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Inconsistência! Como {n1} fez 1 set, ele precisa ter no mínimo 24 tentos."
 
-    return True, None
+    return False, s1, s2, t1, t2, ""
 
 # --- FUNÇÕES DE LÓGICA DE RODADA ---
 def gerar_rodada_web():
@@ -279,13 +272,13 @@ if not st.session_state.torneio_iniciado:
             with st.form(key="form_cadastro", clear_on_submit=True):
                 novo_jogador = st.text_input("Nome do Jogador:")
                 if st.form_submit_button("➕ Adicionar Jogador") and novo_jogador:
-                    nome_limpo = novo_jogador.strip()
-                    if nome_limpo in st.session_state.jogadores:
-                        st.warning(f"⚠️ O jogador '{nome_limpo}' já está inscrito!")
-                    elif nome_limpo != "":
-                        st.session_state.jogadores.append(nome_limpo)
+                    name_clean = novo_jogador.strip()
+                    if name_clean in st.session_state.jogadores:
+                        st.warning(f"⚠️ O jogador '{name_clean}' já está inscrito!")
+                    elif name_clean != "":
+                        st.session_state.jogadores.append(name_clean)
                         salvar_estado_no_disco()
-                        st.success(f"🃏 {nome_limpo} adicionado!")
+                        st.success(f"🃏 {name_clean} adicionado!")
                         st.rerun()
         else:
             st.info("🔒 O cadastro de jogadores está fechado para o público.")
@@ -336,7 +329,6 @@ else:
     # 1. CASO HAJA UM CAMPEÃO DEFINIDO
     if st.session_state.campeao:
         st.markdown("<h2 style='text-align: center; color: #d4af37 !important;'>✨ CERIMÔNIA DE PREMIAÇÃO FINAL ✨</h2>", unsafe_allow_html=True)
-        
         rei_das_flores = st.session_state.classificacao.sort_values(by='Flores', ascending=False).index[0]
         max_flores = int(st.session_state.classificacao.loc[rei_das_flores, 'Flores'])
             
@@ -362,7 +354,6 @@ else:
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase: {st.session_state.fase_matamata}")
         
-        # --- BLINGAGEM E GESTÃO DO CRONÔMETRO NO MATA-MATA ---
         if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tempo_limite = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             tempo_atual = datetime.now()
@@ -381,7 +372,6 @@ else:
                 st.rerun()
         
         if is_admin:
-            # Chave única para o form baseado na fase garante reset de tela
             with st.form(key=f"mm_form_{st.session_state.fase_matamata}"):
                 resultados_fase = []
                 for idx, confronto in enumerate(st.session_state.confrontos_mm):
@@ -401,20 +391,27 @@ else:
                     resultados_fase.append({"j1": j1, "j2": j2, "s1": s1, "s2": s2, "t1": t1, "t2": t2, "f1": f1, "f2": f2, "is_bronze": confronto.get("tipo") == "bronze", "mesa": idx+1})
                 
                 if st.form_submit_button("💾 COMPUTAR RESULTADOS"):
-                    # Validação Consistente de Todos os Placares Antes de Gravar
                     sucesso_validacao = True
+                    dados_ajustados = []
+                    
                     for r in resultados_fase:
-                        ok, msg = validar_placar_truco(r["s1"], r["s2"], r["t1"], r["t2"], r["j1"], r["j2"], r["mesa"])
-                        if not ok:
+                        bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(r["s1"], r["s2"], r["t1"], r["t2"], r["j1"], r["j2"], r["mesa"])
+                        if bloqueia:
                             st.error(msg)
                             sucesso_validacao = False
+                        else:
+                            dados_ajustados.append({"j1": r["j1"], "j2": r["j2"], "s1": ns1, "s2": ns2, "t1": nt1, "t2": nt2, "f1": r["f1"], "f2": r["f2"], "is_bronze": r["is_bronze"]})
                     
                     if sucesso_validacao:
                         vencedores, perdedores = [], []
-                        for r in resultados_fase:
+                        for r in dados_ajustados:
                             j1, j2, s1, s2 = r["j1"], r["j2"], r["s1"], r["s2"]
-                            st.session_state.classificacao.loc[j1, ['Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [s1, r["t1"], r["t2"], r["f1"]]
-                            st.session_state.classificacao.loc[j2, ['Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [s2, r["t2"], r["t1"], r["f2"]]
+                            
+                            s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
+                            s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
+                            
+                            st.session_state.classificacao.loc[j1, ['Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [s1_computado, r["t1"], r["t2"], r["f1"]]
+                            st.session_state.classificacao.loc[j2, ['Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [s2_computado, r["t2"], r["t1"], r["f2"]]
                             
                             if r["is_bronze"]:
                                 if s1 > s2:
@@ -456,7 +453,6 @@ else:
             if st.session_state.rodada_atual <= 5:
                 st.markdown(f"#### 📅 Rodada {st.session_state.rodada_atual} de 5")
                 
-                # --- GESTÃO DO CRONÔMETRO POR LIBERAÇÃO MANUAL DO ADMIN ---
                 if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
                     tempo_limite = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
                     tempo_atual = datetime.now()
@@ -475,7 +471,6 @@ else:
                         st.rerun()
                 
                 if is_admin:
-                    # O uso da rodada_atual no key garante campos sempre limpos e zerados a cada rodada nova!
                     with st.form(key=f"form_rodada_exec_{st.session_state.rodada_atual}"):
                         placares = []
                         for idx, (j1, j2) in enumerate(st.session_state.confrontos):
@@ -498,28 +493,37 @@ else:
                                 placares.append((s1, s2, t1, t2, f1, f2))
                         
                         if st.form_submit_button("💾 COMPUTAR RODADA"):
-                            # Aplicar validação rigorosa de pontuação
                             sucesso_validacao = True
+                            dados_ajustados = []
+                            
                             for idx, c in enumerate(placares):
                                 j1, j2 = st.session_state.confrontos[idx]
                                 if j2 != "CHAPÉU (Folga)":
                                     s1, s2, t1, t2, f1, f2 = c
-                                    ok, msg = validar_placar_truco(s1, s2, t1, t2, j1, j2, idx+1)
-                                    if not ok:
+                                    bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, idx+1)
+                                    if bloqueia:
                                         st.error(msg)
                                         sucesso_validacao = False
+                                    else:
+                                        dados_ajustados.append((ns1, ns2, nt1, nt2, f1, f2))
+                                else:
+                                    dados_ajustados.append(None)
                                         
                             if sucesso_validacao:
                                 dados_hist = []
-                                for idx, c in enumerate(placares):
+                                for idx, c in enumerate(dados_ajustados):
                                     j1, j2 = st.session_state.confrontos[idx]
                                     if j2 == "CHAPÉU (Folga)":
                                         st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
                                         dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
                                     else:
                                         s1, s2, t1, t2, f1, f2 = c
-                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1, t1, t2, f1]
-                                        st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2, t2, t1, f2]
+                                        
+                                        s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
+                                        s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
+                                        
+                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1_computado, t1, t2, f1]
+                                        st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2_computado, t2, t1, f2]
                                         dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": f"({s1}s | {t1}t) ✖ ({s2}s | {t2}t)", "Jogador 2": j2})
                                 
                                 st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
