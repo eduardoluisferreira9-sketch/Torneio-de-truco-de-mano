@@ -158,6 +158,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- GERENCIADOR DE URL / LINKS ---
+# Tenta detectar se já está rodando em nuvem ou local
+try:
+    from streamlit.web.server.server import Server
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    ip_local = s.getsockname()[0]
+    s.close()
+    url_sugerida = f"http://{ip_local}:8501"
+except Exception:
+    url_sugerida = "http://localhost:8501"
+
 # --- CONTROLE DE ACESSO E SIDEBAR ---
 st.sidebar.markdown("### 🔐 Controle de Acesso")
 senha_inserida = st.sidebar.text_input("Chave do Operador:", type="password")
@@ -166,23 +179,27 @@ is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
 if is_admin:
     st.sidebar.success("⚡ Modo Administrador Ativo")
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📱 Compartilhar Torneio")
+    st.sidebar.markdown("### 🌐 Compartilhamento / Acesso")
     
-    # Campo para colocar o link atual que funciona
     url_torneio = st.sidebar.text_input(
-        "Cole aqui a URL atual do navegador:", 
-        value="https://truco-ctg.streamlit.app"
+        "Link atual do Torneio:", 
+        value=st.session_state.get("url_salva_torneio", url_sugerida)
     )
+    st.session_state["url_salva_torneio"] = url_torneio
     
-    # Exibe o QR code em tempo real sem precisar apertar botão, evitando bugs de travamento de estado
-    if url_torneio.strip():
+    if url_torneio:
+        st.sidebar.markdown("**🔗 Link para enviar no WhatsApp:**")
+        st.sidebar.code(url_torneio.strip(), language="text")
+        
+        # Geração dinâmica automática do QR Code com base no link inserido
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(url_torneio.strip())
         qr.make(fit=True)
         img_qr = qr.make_image(fill_color="black", back_color="white")
         buf = BytesIO()
         img_qr.save(buf, format="PNG")
-        st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem este QR Code!", use_container_width=True)
+        
+        st.sidebar.image(buf.getvalue(), caption="Jogadores: Escaneiem para ver as mesas!", use_container_width=True)
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
@@ -252,6 +269,24 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
 
 # --- CONTEÚDO PRINCIPAL ---
 st.title("🏆 Truco de Mano")
+
+# Ajuda visual para o administrador configurar o link público se estiver local
+if not st.session_state.torneio_iniciado and is_admin:
+    with st.expander("🌐 Como gerar o Link de Acesso para os jogadores?"):
+        st.markdown(f"""
+        Se você estiver usando o sistema no seu notebook, escolha uma das formas abaixo para que as pessoas acessem pelo celular:
+        
+        **Opção A: Mesma rede Wi-Fi (Sem internet/Mais rápido)**
+        1. Conecte o seu notebook e o celular dos jogadores no **mesmo Wi-Fi** (ou roteie do seu celular).
+        2. Copie este link: `{url_sugerida}`
+        3. Cole ele ali no campo **'Link atual do Torneio'** na barra lateral. O QR Code gerado vai funcionar direto.
+        
+        **Opção B: Via Internet Pública (Qualquer lugar do mundo)**
+        1. No seu notebook, abra outra janela de terminal/prompt de comando e digite:
+           `ssh -R 80:localhost:8501 loop.dontpwn.me` ou `ssh -R 80:localhost:8501 a.pinggy.io`
+        2. O terminal vai gerar um link público que termina com `.pinggy.link` ou similar.
+        3. Copie esse link gerado, cole no campo **'Link atual do Torneio'** na barra lateral e envie no grupo de WhatsApp!
+        """)
 
 # === TELA 1: CADASTRO / CONFIGURAÇÃO DO TORNEIO ===
 if not st.session_state.torneio_iniciado:
@@ -336,7 +371,7 @@ if not st.session_state.torneio_iniciado:
 else:
     st.markdown(f"### 🏟️ {st.session_state.nome_torneio}")
     
-    # 1. CASO HAJA UM CAMPEÃO DEFINIDO (TELA DE PREMIAÇÃO / PÓDIO FINAL)
+    # 1. CASO HAJA UM CAMPEÃO DEFINIDO
     if st.session_state.campeao:
         st.markdown("<h2 style='text-align: center; color: #d4af37 !important;'>✨ CERIMÔNIA DE PREMIAÇÃO FINAL ✨</h2>", unsafe_allow_html=True)
         rei_das_flores = st.session_state.classificacao.sort_values(by='Flores', ascending=False).index[0]
@@ -361,7 +396,7 @@ else:
             st.session_state.jogadores = jsalvos
             st.rerun()
 
-    # 2. CASO ESTEJA NO MATA-MATA (GERENCIAMENTO DE JOGOS E MESAS FINAIS)
+    # 2. CASO ESTEJA NO MATA-MATA
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase: {st.session_state.fase_matamata}")
         
@@ -558,7 +593,7 @@ else:
                                 else:
                                     dados_ajustados.append(None)
                                         
-                            if sucesso_validacao:
+                            if `# sucesso_validacao`:
                                 dados_hist = []
                                 for idx, c in enumerate(dados_ajustados):
                                     j1, j2 = st.session_state.confrontos[idx]
