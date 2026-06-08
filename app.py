@@ -168,12 +168,11 @@ if is_admin:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 📱 Compartilhar Torneio")
     
-    # DETECÇÃO DINÂMICA DA URL REAL DA PÁGINA (Previne erros de digitação e links quebrados)
-    try:
-        host = st.context.headers.get("host", "truco-ctg.streamlit.app")
-        url_torneio = f"https://{host}"
-    except Exception:
-        url_torneio = "https://truco-ctg.streamlit.app" # Backup de contingência
+    # URL do torneio configurável diretamente na barra lateral (Padrão correto do seu app)
+    url_torneio = st.sidebar.text_input(
+        "Confirme a URL do app:", 
+        value="https://truco-ctg.streamlit.app"
+    )
         
     if st.sidebar.button("🍏 Gerar QR Code de Visualização"):
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -558,32 +557,31 @@ else:
                                 else:
                                     dados_ajustados.append(None)
                                         
-                            if `# Sucesso na validação`:
-                                if sucesso_validacao:
-                                    dados_hist = []
-                                    for idx, c in enumerate(dados_ajustados):
-                                        j1, j2 = st.session_state.confrontos[idx]
-                                        if j2 == "CHAPÉU (Folga)":
-                                            st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
-                                            dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
-                                        else:
-                                            s1, s2, t1, t2, f1, f2 = c
-                                            
-                                            s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
-                                            s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
-                                            
-                                            st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1_computado, t1, t2, f1]
-                                            st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2_computado, t2, t1, f2]
-                                            dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": f"({s1}s | {t1}t) ✖ ({s2}s | {t2}t)", "Jogador 2": j2})
-                                    
-                                    st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
-                                    st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
-                                    st.session_state.rodada_atual += 1
-                                    if st.session_state.rodada_atual <= 5:
-                                        gerar_rodada_web()
+                            if sucesso_validacao:
+                                dados_hist = []
+                                for idx, c in enumerate(dados_ajustados):
+                                    j1, j2 = st.session_state.confrontos[idx]
+                                    if j2 == "CHAPÉU (Folga)":
+                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
+                                        dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": "CHAPÉU", "Jogador 2": "Folga"})
                                     else:
-                                        salvar_estado_no_disco()
-                                    st.rerun()
+                                        s1, s2, t1, t2, f1, f2 = c
+                                        
+                                        s1_computado = 3 if (s1 == 2 and s2 == 0) else s1
+                                        s2_computado = 3 if (s2 == 2 and s1 == 0) else s2
+                                        
+                                        st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s1 > s2 else 0), s1_computado, t1, t2, f1]
+                                        st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if s2 > s1 else 0), s2_computado, t2, t1, f2]
+                                        dados_hist.append({"Mesa": idx+1, "Jogador 1": j1, "Placar": f"({s1}s | {t1}t) ✖ ({s2}s | {t2}t)", "Jogador 2": j2})
+                                
+                                st.session_state.historico_rodadas[f"Rodada {st.session_state.rodada_atual}"] = dados_hist
+                                st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
+                                st.session_state.rodada_atual += 1
+                                if st.session_state.rodada_atual <= 5:
+                                    gerar_rodada_web()
+                                else:
+                                    salvar_estado_no_disco()
+                                st.rerun()
                 else:
                     for idx, (j1, j2) in enumerate(st.session_state.confrontos):
                         st.markdown(f"<div class='card-mesa'><b>Mesa {idx+1}:</b> {j1} ⚔️ {j2}</div>", unsafe_allow_html=True)
