@@ -3,9 +3,7 @@ import pandas as pd
 import random
 import json
 import os
-import qrcode
-from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 
 st.set_page_config(
     page_title="Torneio de Truco de Mano - Sicredi & Cusco",
@@ -124,6 +122,7 @@ st.markdown("""
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
     }
     .card-mesa { background-color: #2c6b56; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #d4af37; }
+    .cronometro-box { background-color: #11221a; border: 2px solid #d4af37; padding: 12px; border-radius: 8px; text-align: center; font-family: 'Courier New', Courier, monospace; margin-bottom: 20px; }
     
     /* Pódio e Destaques dos Campeões */
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 20px; }
@@ -209,6 +208,8 @@ def gerar_rodada_web():
 
     for i in range(0, len(lista_rodada), 2):
         st.session_state.confrontos.append((lista_rodada[i], lista_rodada[i+1]))
+    st.session_state.hora_inicio_rodada = None
+    st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
 def iniciar_fase_matamata(lista_jogadores, nome_fase):
@@ -218,6 +219,8 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     n = len(lista_jogadores)
     for i in range(n // 2):
         st.session_state.confrontos_mm.append({"tipo": "normal", "j1": lista_jogadores[i], "j2": lista_jogadores[n - 1 - i]})
+    st.session_state.hora_inicio_rodada = None
+    st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
 # --- CONTEÚDO PRINCIPAL ---
@@ -276,6 +279,43 @@ if not st.session_state.torneio_iniciado:
 else:
     st.markdown(f"### 🏟️ {st.session_state.nome_torneio}")
     
+    # --- BLOCO DO CRONÔMETRO DE RODADA (45 MINUTOS) ---
+    if not st.session_state.campeao:
+        st.markdown("### ⏱️ Tempo de Partida (Regulamentar: 45 Minutos)")
+        if st.session_state.hora_inicio_rodada is not None:
+            tempo_decorrido = datetime.now() - st.session_state.hora_inicio_rodada
+            tempo_restante = timedelta(minutes=45) - tempo_decorrido
+            
+            if tempo_restante.total_seconds() > 0:
+                minutos, segundos = divmod(int(tempo_restante.total_seconds()), 60)
+                st.markdown(f'<div class="cronometro-box"><h2 style="margin:0; font-size:2.5rem; color:#ff4b4b !important;">⏳ {minutos:02d}:{segundos:02d} RESTANTES</h2></div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="cronometro-box"><h2 style="margin:0; font-size:2.5rem; color:#ff4b4b !important;">🚨 TEMPO ESGOTADO! APARE OS TENTOS</h2></div>', unsafe_allow_html=True)
+            
+            if is_admin:
+                col_c1, col_c2 = st.columns(2)
+                with col_c1:
+                    if st.button("⏹️ Parar/Zerar Cronômetro"):
+                        st.session_state.hora_inicio_rodada = None
+                        st.session_state.cronometro_ativo = False
+                        salvar_estado_no_disco()
+                        st.rerun()
+                with col_c2:
+                    if st.button("🔓 Liberar/Destravar +5 Minutos"):
+                        # Adiciona mais 5 minutos deslocando o início fictício para trás
+                        st.session_state.hora_inicio_rodada += timedelta(minutes=5)
+                        salvar_estado_no_disco()
+                        st.rerun()
+        else:
+            st.markdown('<div class="cronometro-box"><h3 style="margin:0; color:#a0c0b5 !important;">Cronômetro Pausado (45 Minutos)</h3></div>', unsafe_allow_html=True)
+            if is_admin:
+                if st.button("▶️ Disparar Cronômetro da Rodada"):
+                    st.session_state.hora_inicio_rodada = datetime.now()
+                    st.session_state.cronometro_ativo = True
+                    salvar_estado_no_disco()
+                    st.rerun()
+        st.markdown("---")
+
     # 1. CASO TENHA UM CAMPEÃO DEFINIDO -> EXIBE O PÓDIO FINAL EM DESTAQUE
     if st.session_state.campeao:
         st.markdown("<h2 style='text-align: center; color: #d4af37 !important;'>✨ CERIMÔNIA DE PREMIAÇÃO ✨</h2>", unsafe_allow_html=True)
