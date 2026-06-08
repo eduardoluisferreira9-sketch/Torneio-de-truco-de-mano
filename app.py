@@ -179,7 +179,7 @@ if is_admin:
 else:
     st.sidebar.info("👁️ Modo Visualizador Público")
 
-# --- 🛠️ TRAVA MATEMÁTICA DEFINITIVA E CORRIGIDA ---
+# --- 🛠️ TRAVA MATEMÁTICA DEFINITIVA ---
 def conferir_e_ajustar_valores(s1, s2, t1, t2, n1, n2, mesa_id):
     if (s1 == 2 and s2 == 2) or (s1 < 2 and s2 < 2):
         return True, s1, s2, t1, t2, f"Mesa {mesa_id}: Placar de Sets inválido ({s1}x{s2}). Alguém precisa fechar com exatamente 2 sets."
@@ -302,6 +302,18 @@ if not st.session_state.torneio_iniciado:
                 
     with aba2:
         st.markdown("### 🏛️ Registro de Campeões")
+        
+        # Botão administrativo para limpar o histórico da galeria (Útil para testes)
+        if is_admin:
+            if os.path.exists(ARQUIVO_GALERIA):
+                if st.button("🗑️ Limpar Todo o Histórico da Galeria", type="primary"):
+                    try:
+                        os.remove(ARQUIVO_GALERIA)
+                        st.success("Galeria de campeões apagada com sucesso!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro ao limpar galeria: {e}")
+
         if os.path.exists(ARQUIVO_GALERIA):
             with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f:
                 dados_galeria = json.load(f)
@@ -329,11 +341,14 @@ else:
             st.session_state.salvo_na_galeria = True
             salvar_estado_no_disco()
         
-        st.markdown(f'<div class="box-campeao"><h1>🥇 1º LUGAR - CAMPEÃO 🥇</h1><h2>🌟 {st.session_state.campeao} 🌟</h2></div>', unsafe_allow_html=True)
+        # Frase tradicional de volta para o campeão máximo!
+        st.markdown(f'<div class="box-campeao"><h1>🥇 1º LUGAR - CAMPEÃO 🥇</h1><h2>🌟 {st.session_state.campeao} 🌟</h2><p style="margin:5px 0 0 0; font-style:italic; font-weight:bold; color:#111111 !important;">🤠 PATRÃO DAS MESAS DE TRUCO</p></div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-vice">🥈 2º LUGAR: {st.session_state.vice_campeao}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-terceiro">🥉 3º LUGAR: {st.session_state.terceiro_lugar}</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="podio-posicao podio-quarto">🎖️ 4º LUGAR: {st.session_state.quarto_lugar}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)</div>', unsafe_allow_html=True)
+        
+        # Frase poética tradicional de volta para o Rei das Flores!
+        st.markdown(f'<div class="box-flores">🌸 REI DAS FLORES: {rei_das_flores} ({max_flores} fl.)<br><small style="font-style: italic;">"Floriu o galpão inteiro cantando um buquê de flores!"</small></div>', unsafe_allow_html=True)
         
         if is_admin and st.button("🏁 Novo Torneio (Limpar Tudo)"):
             if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
@@ -346,7 +361,6 @@ else:
     elif st.session_state.em_matamata:
         st.markdown(f"#### ⚡ Fase: {st.session_state.fase_matamata}")
         
-        # Bloco Unificado do Cronômetro de 45 Minutos com Ajuste de Tolerância
         if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tempo_limite = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             tempo_atual = datetime.now()
@@ -384,7 +398,6 @@ else:
                 for idx, confronto in enumerate(st.session_state.confrontos_mm):
                     j1, j2 = confronto["j1"], confronto["j2"]
                     
-                    # Nomeação matemática exata das Mesas Finais no Painel do Operador
                     if st.session_state.fase_matamata == "FINAIS":
                         texto_mesa = "🏆 MESA DA GRANDE FINAL" if confronto.get("tipo") == "normal" else "🥉 DISPUTA DO 3º LUGAR"
                     else:
@@ -456,7 +469,6 @@ else:
                         salvar_estado_no_disco()
                         st.rerun()
         else:
-            # Exibição Pública das Mesas Finais Limpa de Poluição
             for idx, c in enumerate(st.session_state.confrontos_mm):
                 if st.session_state.fase_matamata == "FINAIS":
                     label_tela_publica = "🏆 Grande Final" if c["tipo"] == "normal" else "Disputa de 3º Lugar"
