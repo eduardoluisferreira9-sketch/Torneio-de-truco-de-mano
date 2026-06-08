@@ -182,14 +182,13 @@ if is_admin:
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🌐 Link de Acesso Público")
     
-    # Campo manual para caso o admin mude de ideia ou use outro túnel
     url_torneio = st.sidebar.text_input("Link Atual:", value=st.session_state.get("url_override", url_oficial))
     st.session_state["url_override"] = url_torneio
     
-    st.sidebar.markdown("**Partilhar no WhatsApp:**")
+    st.sidebar.markdown("**Compartilhar no WhatsApp:**")
     st.sidebar.code(url_torneio, language="text")
     
-    # Gerador de QR Code limpo e direto
+    # Gerador de QR Code
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(url_torneio)
     qr.make(fit=True)
@@ -269,10 +268,10 @@ st.title("🏆 Truco de Mano")
 
 # Guia visual rápido na página inicial para o administrador conectar o pessoal
 if not st.session_state.torneio_iniciado and is_admin:
-    st.info(f"📢 **COMO FAZER OS JOGADORES ENTRAREM PELO TELEMÓVEL AGORA:**\n\n"
-            f"1. Ligue o **Ponto de Acesso/Roteador** do seu telemóvel (ou use o Wi-Fi do local) e ligue o seu portátil a ele.\n"
-            f"2. Peça para os jogadores se ligarem ao **mesmo Wi-Fi**.\n"
-            f"3. Pronto! Eles só precisam de ler o QR Code que está na barra lateral ou digitar o endereço: `{url_oficial}` no navegador do telemóvel!")
+    st.info(f"📢 **COMO FAZER OS JOGADORES ENTRAREM PELO CELULAR AGORA:**\n\n"
+            f"1. Ligue o **Ponto de Acesso/Roteador** do seu celular (ou use o Wi-Fi do local) e conecte o seu notebook a ele.\n"
+            f"2. Peça para os jogadores se conectarem ao **mesmo Wi-Fi**.\n"
+            f"3. Pronto! Eles só precisam ler o QR Code que está na barra lateral ou digitar o endereço: `{url_oficial}` no navegador do celular!")
 
 # === TELA 1: CADASTRO / CONFIGURAÇÃO DO TORNEIO ===
 if not st.session_state.torneio_iniciado:
