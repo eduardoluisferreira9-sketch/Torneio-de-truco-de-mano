@@ -52,22 +52,11 @@ st.markdown("""
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
     }
-    .card-telao-central {
-        background-color: #11221a;
-        padding: 25px; border-radius: 16px; border: 2px solid #d4af37; margin-bottom: 25px;
-        box-shadow: 0px 8px 16px rgba(0,0,0,0.5);
-    }
     .cronometro-box { 
         background-color: #11221a; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
     }
-    .texto-confronto { font-size: 1.25rem !important; font-weight: bold !important; color: #ffffff !important; }
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
-    .podio-posicao { padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 10px; color: #ffffff !important; }
-    .podio-vice { background-color: #a0a0a0; border: 2px solid #d1d1d1; }
-    .podio-terceiro { background-color: #cd7f32; border: 2px solid #e5a65d; }
-    .podio-quarto { background-color: #2c6b56; border: 2px solid #d4af37; }
-    .box-flores { background-color: #4a1525; padding: 15px; border-radius: 10px; text-align: center; color: #ffffff !important; border: 2px solid #ff4b4b; margin-top: 15px; margin-bottom: 20px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
     </style>
 """, unsafe_allow_html=True)
@@ -164,21 +153,6 @@ def carregar_estado_do_disco():
             else: st.session_state.classificacao = None
         except Exception: pass
 
-def salvar_na_galeria(torneio, campeao, vice, terceiro, quarto, rei_flores, qtd_flores):
-    registros = []
-    if os.path.exists(ARQUIVO_GALERIA):
-        try:
-            with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: registros = json.load(f)
-        except Exception: registros = []
-    novo_registro = {
-        "data": datetime.now().strftime("%d/%m/%Y %H:%M"), "torneio": torneio,
-        "campeao": campeao, "vice": vice, "terceiro": terceiro, "quarto": quarto,
-        "rei_flores": f"{rei_flores} ({qtd_flores} fl.)"
-    }
-    registros.insert(0, novo_registro)
-    with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
-        json.dump(registros, f, ensure_ascii=False, indent=4)
-
 # --- CONFIGURAÇÃO INICIAL DE MEMÓRIA ---
 valores_padrao = {
     "jogadores": [], "torneio_iniciado": False, "rodada_atual": 1, "classificacao": None,
@@ -207,6 +181,7 @@ def gerar_rodada_web():
     st.session_state.confrontos = []
     st.session_state.placares_rodada_atual = {}
     
+    # Processa Folga (Chapéu)
     if len(lista_rodada) % 2 != 0:
         cand = [j for j in lista_rodada if j not in st.session_state.jogadores_no_chapeu]
         chapeu = random.choice(cand if cand else lista_rodada)
@@ -214,9 +189,12 @@ def gerar_rodada_web():
         st.session_state.jogadores_no_chapeu.add(chapeu)
         st.session_state.confrontos.append((chapeu, "CHAPÉU (Folga)"))
 
+    # Monta as duplas/mesas de jogo consecutivamente
+    contador_mesa = 1
     for i in range(0, len(lista_rodada), 2):
         st.session_state.confrontos.append((lista_rodada[i], lista_rodada[i+1]))
-        st.session_state.placares_rodada_atual[str(i//2)] = [0, 0, 0, 0, 0, 0, False] # s1, s2, t1, t2, f1, f2, jogado?
+        st.session_state.placares_rodada_atual[str(contador_mesa)] = [0, 0, 0, 0, 0, 0, False]
+        contador_mesa += 1
     
     st.session_state.hora_inicio_rodada = None
     st.session_state.cronometro_ativo = False
@@ -230,46 +208,45 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     n = len(lista_jogadores)
     for i in range(n // 2):
         st.session_state.confrontos_mm.append({"tipo": "normal", "j1": lista_jogadores[i], "j2": lista_jogadores[n - 1 - i]})
-        st.session_state.placares_rodada_atual[str(i)] = [0, 0, 0, 0, 0, 0, False]
+        st.session_state.placares_rodada_atual[str(i+1)] = [0, 0, 0, 0, 0, 0, False]
     st.session_state.hora_inicio_rodada = None
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- INPUT FLUTUANTE (DIALOG) COM COLETOR INTERNO ---
+# --- INPUT FLUTUANTE (DIALOG) COM COLETOR INTERNO CORRIGIDO ---
 @st.dialog("💾 Lançar Performance da Mesa")
-def dialog_entrada_placares(mesa_key, j1, j2):
+def dialog_entrada_placares(mesa_id_string, j1, j2):
     st.markdown(f"**Competidores em Mesa:**")
     st.markdown(f"🥇 `J1: {j1}` ✖️ 🥈 `J2: {j2}`")
     st.markdown("---")
     
-    # Armazena os dados atuais para não resetar o formulário
-    valores_salvos = st.session_state.placares_rodada_atual.get(str(mesa_key), [0,0,0,0,0,0,False])
+    valores_salvos = st.session_state.placares_rodada_atual.get(mesa_id_string, [0,0,0,0,0,0,False])
     
-    with st.form(key=f"form_dialog_{mesa_key}"):
+    # Criado formulário isolado com ID único baseado na mesa para evitar colisão de dados
+    with st.form(key=f"form_isolado_mesa_{mesa_id_string}"):
         col1, col2 = st.columns(2)
         with col1:
             st.markdown(f"🤠 **{j1}**")
-            s1 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[0]))
-            t1 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[2]))
-            f1 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[4]))
+            s1 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[0]), key=f"inp_s1_{mesa_id_string}")
+            t1 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[2]), key=f"inp_t1_{mesa_id_string}")
+            f1 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[4]), key=f"inp_f1_{mesa_id_string}")
         with col2:
             st.markdown(f"🤠 **{j2}**")
-            s2 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[1]))
-            t2 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[3]))
-            f2 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[5]))
+            s2 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[1]), key=f"inp_s2_{mesa_id_string}")
+            t2 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[3]), key=f"inp_t2_{mesa_id_string}")
+            f2 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[5]), key=f"inp_f2_{mesa_id_string}")
             
         if st.form_submit_button("Confirmar e Plotar no Telão"):
-            # Executa a trava matemática
-            bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, int(mesa_key)+1)
+            bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, mesa_id_string)
             if bloqueia:
                 st.error(msg)
             else:
-                st.session_state.placares_rodada_atual[str(mesa_key)] = [ns1, ns2, nt1, nt2, f1, f2, True]
+                st.session_state.placares_rodada_atual[mesa_id_string] = [ns1, ns2, nt1, nt2, f1, f2, True]
                 salvar_estado_no_disco()
                 st.rerun()
 
-# --- HTML/CSS PLANTA BAIXA DA MESA (IGUAL À IMAGEM) ---
-def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2, logo_url):
+# --- HTML/CSS PLANTA BAIXA DA MESA ---
+def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
     <div style="background-color: #143525; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); min-height: 410px; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 25px;">
         <div style="position: absolute; top: 15px; text-align: center; width: 100%;">
@@ -303,7 +280,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2, logo_ur
     components.html(html_mesa, height=435, scrolling=False)
 
 # -------------------------------------------------------------------------
-# 💾 MENU OPERADOR LATERAL (REVERTIDO PARA MODELO OCULTÁVEL)
+# 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
 # -------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("## ⚙️ Gestão Técnica")
@@ -336,10 +313,10 @@ with st.sidebar:
             if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
             st.session_state.clear(); st.rerun()
     else:
-        st.info("Painel limpo. Insira a senha técnica na barra lateral para abrir os controles.")
+        st.info("Insira a senha técnica para abrir os controles do operador.")
 
 # -------------------------------------------------------------------------
-# ⚔️ CAPA / INSCRICAO OU CENTRAL DE CONFRONTOS DO TELÃO
+# ⚔️ CAPA / INSCRIÇÃO OU CENTRAL DE CONFRONTOS DO TELÃO
 # -------------------------------------------------------------------------
 if not st.session_state.torneio_iniciado:
     st.markdown(f"<h1 style='text-align:center;'>🏆 Sistema de Torneios de Truco</h1>", unsafe_allow_html=True)
@@ -367,17 +344,15 @@ if not st.session_state.torneio_iniciado:
             if dg: st.dataframe(pd.DataFrame(dg), use_container_width=True, hide_index=True)
 
 else:
-    # TELÃO ATIVO EM EXECUÇÃO
     col_mesas, col_ranking = st.columns([3, 1])
     
     with col_mesas:
-        # Cronômetro
         if not st.session_state.campeao and st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tl = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             ta = datetime.now()
             if ta < tl:
                 tr = tl - ta
-                st.markdown(f'<div class="cronometro-box"><h1>⏱️ TEMPO RESTANTE DA RODADA: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h1></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="cronometro-box"><h1>⏱️ TEMPO RESTANTE: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h1></div>', unsafe_allow_html=True)
             else: st.markdown('<div class="cronometro-box"><h1 style="color:#ff4b4b !important;">⏰ TEMPO ESGOTADO!</h1></div>', unsafe_allow_html=True)
             
         if st.session_state.campeao:
@@ -387,43 +362,57 @@ else:
             st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
             for idx, c in enumerate(st.session_state.confrontos_mm):
                 j1, j2 = c["j1"], c["j2"]
-                p = st.session_state.placares_rodada_atual.get(str(idx), [0,0,0,0,0,0,False])
-                desenhar_mesa_planta_baixa(j1, j2, idx+1, p[0], p[2], p[4], p[1], p[3], p[5], "")
+                m_str = str(idx + 1)
+                p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
+                desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
                 if is_admin:
-                    if st.button(f"✏️ Lançar Mesa {idx+1}", key=f"btn_mm_{idx}"):
-                        dialog_entrada_placares(str(idx), j1, j2)
+                    if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_mm_{m_str}"):
+                        dialog_entrada_placares(m_str, j1, j2)
                         
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
-            for idx, (j1, j2) in enumerate(st.session_state.confrontos):
+            
+            # Primeiro passa limpando as folgas para exibi-las em cima
+            for j1, j2 in st.session_state.confrontos:
                 if j2 == "CHAPÉU (Folga)":
-                    st.markdown(f"🤠 **{j1}** está de folga no Chapéu.")
-                else:
-                    p = st.session_state.placares_rodada_atual.get(str(idx), [0,0,0,0,0,0,False])
-                    desenhar_mesa_planta_baixa(j1, j2, idx+1, p[0], p[2], p[4], p[1], p[3], p[5], "")
+                    st.markdown(f"🤠 **{j1}** está de folga no Chapéu (Ganha +1V automaticamente).")
+            
+            # Lista as mesas de jogo de forma indexada sequencialmente
+            contador_real_mesa = 1
+            for j1, j2 in st.session_state.confrontos:
+                if j2 != "CHAPÉU (Folga)":
+                    m_str = str(contador_real_mesa)
+                    p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
+                    
+                    desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
+                    
                     if is_admin:
-                        if st.button(f"✏️ Lançar Mesa {idx+1}", key=f"btn_cl_{idx}"):
-                            dialog_entrada_placares(str(idx), j1, j2)
+                        if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_cl_{m_str}"):
+                            dialog_entrada_placares(m_str, j1, j2)
+                    contador_real_mesa += 1
             
             if is_admin:
                 st.markdown("---")
                 if st.button("🏁 Fechar e Salvar Rodada Atual", type="primary"):
-                    # Consolida os placares salvos da rodada no DataFrame geral
-                    for idx, (j1, j2) in enumerate(st.session_state.confrontos):
+                    contador_consolidacao = 1
+                    for j1, j2 in st.session_state.confrontos:
                         if j2 == "CHAPÉU (Folga)":
                             st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
                         else:
-                            p = st.session_state.placares_rodada_atual.get(str(idx), [0,0,0,0,0,0,False])
+                            m_str = str(contador_consolidacao)
+                            p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                             s1_c = 3 if (p[0] == 2 and p[1] == 0) else p[0]
                             s2_c = 3 if (p[1] == 2 and p[0] == 0) else p[1]
                             st.session_state.classificacao.loc[j1, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if p[0] > p[1] else 0), s1_c, p[2], p[3], p[4]]
                             st.session_state.classificacao.loc[j2, ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro', 'Tentos_Contra', 'Flores']] += [(1 if p[1] > p[0] else 0), s2_c, p[3], p[2], p[5]]
+                            contador_consolidacao += 1
                     
                     st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
                     st.session_state.rodada_atual += 1
-                    if st.session_state.rodada_atual <= 5: gerar_rodada_web()
+                    if st.session_state.rodada_atual <= 5: 
+                        gerar_rodada_web()
                     else:
-                        st.success("Fim das 5 rodadas!")
+                        st.success("Fim das 5 rodadas classificatórias!")
                         n_insc = len(st.session_state.jogadores)
                         f_nome = "OITAVAS" if n_insc > 16 else ("QUARTAS" if n_insc >= 8 else "SEMIFINAL")
                         df_v = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
