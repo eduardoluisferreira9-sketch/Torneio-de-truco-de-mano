@@ -64,18 +64,19 @@ st.markdown("""
         font-weight: bold !important;
     }
     
+    /* Customização dos Number Inputs na Área de Lançamento Direto */
+    div[data-testid="stNumberInput"] input {
+        color: #ffffff !important;
+        background-color: #113223 !important;
+        border: 1px solid #d4af37 !important;
+        text-align: center !important;
+    }
+    div[data-testid="stNumberInput"] label {
+        color: #a0c0b5 !important;
+    }
+    
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
-
-    div[data-testid="stDialog"] label, 
-    div[data-testid="stDialog"] p,
-    div[data-testid="stDialog"] span { 
-        color: #111111 !important; 
-    }
-    div[data-testid="stDialog"] input {
-        color: #111111 !important;
-        background-color: #ffffff !important;
-    }
     
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
@@ -279,33 +280,31 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- INPUT FLUTUANTE (DIALOG) ---
-@st.dialog("💾 Lançar Performance da Mesa")
-def dialog_entrada_placares(mesa_id_string, j1, j2):
-    st.write(f"Competidores: **{j1}** vs **{j2}**")
+# --- BLOCÃO DE ENTRADA DIRETO NA MESA (PAINEL DO OPERADOR) ---
+def renderizar_painel_lancamento_direto(m_str, j1, j2):
+    valores_salvos = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
     
-    valores_salvos = st.session_state.placares_rodada_atual.get(mesa_id_string, [0,0,0,0,0,0,False])
-    
-    with st.form(key=f"form_isolado_mesa_{mesa_id_string}"):
+    with st.expander(f"🛠️ Lançamento Rápido - Mesa {m_str}", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            st.write(f"🧔 **Jogador 1: {j1}**")
-            s1 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[0]), key=f"inp_s1_{mesa_id_string}")
-            t1 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[2]), key=f"inp_t1_{mesa_id_string}")
-            f1 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[4]), key=f"inp_f1_{mesa_id_string}")
+            st.markdown(f"**{j1}**")
+            s1 = st.number_input("Sets", 0, 2, int(valores_salvos[0]), key=f"dir_s1_{m_str}")
+            t1 = st.number_input("Tentos", 0, 72, int(valores_salvos[2]), key=f"dir_t1_{m_str}")
+            f1 = st.number_input("Flores", 0, 20, int(valores_salvos[4]), key=f"dir_f1_{m_str}")
         with col2:
-            st.write(f"🧔 **Jogador 2: {j2}**")
-            s2 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[1]), key=f"inp_s2_{mesa_id_string}")
-            t2 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[3]), key=f"inp_t2_{mesa_id_string}")
-            f2 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[5]), key=f"inp_f2_{mesa_id_string}")
+            st.markdown(f"**{j2}**")
+            s2 = st.number_input("Sets", 0, 2, int(valores_salvos[1]), key=f"dir_s2_{m_str}")
+            t2 = st.number_input("Tentos", 0, 72, int(valores_salvos[3]), key=f"dir_t2_{m_str}")
+            f2 = st.number_input("Flores", 0, 20, int(valores_salvos[5]), key=f"dir_f2_{m_str}")
             
-        if st.form_submit_button("Confirmar e Plotar no Telão"):
-            bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, mesa_id_string)
+        if st.button("💾 Atualizar Placar", key=f"btn_salvar_dir_{m_str}"):
+            bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, m_str)
             if bloqueia:
                 st.error(msg)
             else:
-                st.session_state.placares_rodada_atual[mesa_id_string] = [ns1, ns2, nt1, nt2, f1, f2, True]
+                st.session_state.placares_rodada_atual[m_str] = [ns1, ns2, nt1, nt2, f1, f2, True]
                 salvar_estado_no_disco()
+                st.success("Placar atualizado na planta baixa!")
                 st.rerun()
 
 # --- HTML/CSS PLANTA BAIXA DA MESA ---
@@ -429,7 +428,6 @@ with aba_arena:
         elif st.session_state.em_matamata:
             st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
             
-            # Força visual: Se for a fase final, ordena para a Final vir estritamente primeiro no desenho da tela
             lista_confrontos_renderizada = st.session_state.confrontos_mm
             if st.session_state.fase_matamata == "FINAL E TERCEIRO":
                 lista_confrontos_renderizada = sorted(st.session_state.confrontos_mm, key=lambda x: 0 if x["tipo"] == "final" else 1)
@@ -448,9 +446,10 @@ with aba_arena:
                 
                 st.write(f"**{label_mesa}**")
                 desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
+                
+                # Exibe o painel de inputs logo abaixo se for admin
                 if is_admin:
-                    if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_mm_{m_str}"):
-                        dialog_entrada_placares(m_str, j1, j2)
+                    renderizar_painel_lancamento_direto(m_str, j1, j2)
                         
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
@@ -473,9 +472,10 @@ with aba_arena:
                     
                     desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
                     
+                    # Exibe o painel de inputs logo abaixo se for admin
                     if is_admin:
-                        if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_cl_{m_str}"):
-                            dialog_entrada_placares(m_str, j1, j2)
+                        renderizar_painel_lancamento_direto(m_str, j1, j2)
+                        
                     contador_real_mesa += 1
             
         # 🚨 SEÇÃO DO BOTÃO DE FECHAMENTO
@@ -509,9 +509,6 @@ with aba_arena:
                     st.rerun()
             else:
                 if st.button("🏆 Consolidar Eliminatória e Avançar", type="primary"):
-                    vencedores = []
-                    perdedores = []
-                    
                     for c in st.session_state.confrontos_mm:
                         m_str = c["id_original"]
                         p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
