@@ -626,7 +626,7 @@ with col_centro:
                                 st.session_state.rodada_atual += 1
                                 if st.session_state.rodada_atual <= 5: gerar_rodada_web()
                                 salvar_estado_no_disco(); st.rerun()
-				else:
+                else:
                     st.success("🎉 Classificatória Encerrada!")
                     n_insc = len(st.session_state.jogadores)
                     f_nome = "OITAVAS DE FINAL" if n_insc > 16 else ("QUARTAS DE FINAL" if n_insc >= 8 else "SEMIFINAL")
