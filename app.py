@@ -1,3 +1,4 @@
+import streamlit as str_antigo # Apenas para evitar conflitos, use o código abaixo completo
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -159,13 +160,13 @@ st.markdown("""
     .galeria-ouro { color: #d4af37 !important; font-weight: 900; }
     .galeria-linha-secundaria { font-size: 1.1rem; color: #e0e0e0; }
     
-    /* 🏆 NOVO DESIGN SUPREMO DO PODIO DE PREMIAÇÃO */
+    /* 🏆 CSS DO PODIO DE PREMIAÇÃO FINAL */
     .arena-podio-wrapper {
         display: flex;
         align-items: flex-end;
         justify-content: center;
         gap: 20px;
-        margin: 50px auto 30px auto;
+        margin: 40px auto 20px auto;
         max-width: 1000px;
         font-family: sans-serif;
     }
@@ -173,10 +174,9 @@ st.markdown("""
         flex: 1;
         border-radius: 20px 20px 10px 10px;
         text-align: center;
-        padding: 30px 15px;
+        padding: 25px 15px;
         box-shadow: 0px 15px 35px rgba(0,0,0,0.7);
         position: relative;
-        transition: transform 0.3s ease;
     }
     .degrau-1 {
         background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312);
@@ -202,41 +202,40 @@ st.markdown("""
         font-weight: 900;
         margin: 0;
         line-height: 1;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
     .degrau-1 .podio-posicao { color: #000000 !important; }
     .degrau-2 .podio-posicao { color: #111111 !important; }
     .degrau-3 .podio-posicao { color: #ffffff !important; }
     
     .podio-nome-atleta {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         font-weight: 900;
         text-transform: uppercase;
         margin: 15px 0 5px 0;
         letter-spacing: 1px;
         word-wrap: break-word;
     }
-    .degrau-1 .podio-nome-atleta { color: #07140f !important; text-shadow: 1px 1px 0px rgba(255,255,255,0.5); }
+    .degrau-1 .podio-nome-atleta { color: #07140f !important; }
     .degrau-2 .podio-nome-atleta { color: #07140f !important; }
     .degrau-3 .podio-nome-atleta { color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
 
     .podio-sub-label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-weight: bold;
         text-transform: uppercase;
-        letter-spacing: 1px;
     }
     .degrau-1 .podio-sub-label { color: #403000 !important; }
     .degrau-2 .podio-sub-label { color: #222222 !important; }
     .degrau-3 .podio-sub-label { color: #f0f0f0 !important; }
 
-    /* Cards Complementares (4º Lugar e Rei da Flor) */
     .secao-premios-especiais {
         display: flex;
         justify-content: center;
         gap: 25px;
         max-width: 1000px;
         margin: 20px auto 40px auto;
+        font-family: sans-serif;
     }
     .card-premio-quarto {
         flex: 1;
@@ -549,7 +548,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
 
 # --- BARRA LATERAL ---
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnica")
+    st.markdown("## ⚙️ Gestão Técnico")
     senha = st.text_input("Chave Master:", type="password")
     is_admin = (senha == CHAVE_ADMINISTRADOR)
     if is_admin:
@@ -594,44 +593,52 @@ with aba_arena:
     else:
         if st.session_state.campeao:
             st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
-            rei_flor_nome = st.session_state.classificacao['Flores'].idxmax()
+            
+            # Sanitização segura de strings para evitar quebra do HTML
+            champ = str(st.session_state.campeao)
+            vice = str(st.session_state.vice_campeao)
+            third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
+            fourth = str(st.session_state.quarto_lugar) if st.session_state.quarto_lugar else "N/A"
+            
+            rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
-            # 🥇 PÓDIO TRIDIMENSIONAL REESTILIZADO (Degraus: 2º, 1º, 3º)
-            st.markdown(f"""
-                <div class="arena-podio-wrapper">
-                    <div class="podio-degrau degrau-2">
-                        <p class="podio-posicao">2º</p>
-                        <div class="podio-nome-atleta">{st.session_state.vice_campeao}</div>
-                        <div class="podio-sub-label">🥈 Vice-Campeão</div>
-                    </div>
-                    
-                    <div class="podio-degrau degrau-1">
-                        <p class="podio-posicao">1º</p>
-                        <div class="podio-nome-atleta">{st.session_state.campeao}</div>
-                        <div class="podio-sub-label">👑 Rei do Truco / Campeão Supremo</div>
-                    </div>
-                    
-                    <div class="podio-degrau degrau-3">
-                        <p class="podio-posicao">3º</p>
-                        <div class="podio-nome-atleta">{st.session_state.terceiro_lugar if st.session_state.terceiro_lugar else 'N/A'}</div>
-                        <div class="podio-sub-label">🥉 3º Colocado</div>
-                    </div>
+            # Renderização segura isolando as strings formatadas
+            html_podio_supremo = f"""
+            <div class="arena-podio-wrapper">
+                <div class="podio-degrau degrau-2">
+                    <p class="podio-posicao">2º</p>
+                    <div class="podio-nome-atleta">{vice}</div>
+                    <div class="podio-sub-label">🥈 Vice-Campeão</div>
                 </div>
                 
-                <div class="secao-premios-especiais">
-                    <div class="card-premio-quarto">
-                        <h4 style="margin:0; color:#d4af37 !important; font-weight:bold;">🏅 FINALISTA EXTRAÓRDINÁRIO (4º Lugar)</h4>
-                        <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">{st.session_state.quarto_lugar if st.session_state.quarto_lugar else 'N/A'}</h2>
-                    </div>
-                    
-                    <div class="card-premio-flor">
-                        <h3 style="margin:0; color:#ffffff !important; font-weight:900; text-transform:uppercase; letter-spacing:1px;">🌸 TROFÉU MAIOR CANTADOR DE FLOR 🌸</h3>
-                        <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">{rei_flor_nome}</h2>
-                        <p style="margin:0; font-weight:bold; color:#ffe066 !important; font-size:1.1rem;">Dominou o galpão cantando {rei_flor_val} flores!</p>
-                    </div>
+                <div class="podio-degrau degrau-1">
+                    <p class="podio-posicao">1º</p>
+                    <div class="podio-nome-atleta">{champ}</div>
+                    <div class="podio-sub-label">👑 Rei do Truco / Campeão Supremo</div>
                 </div>
-            """, unsafe_allow_html=True)
+                
+                <div class="podio-degrau degrau-3">
+                    <p class="podio-posicao">3º</p>
+                    <div class="podio-nome-atleta">{third}</div>
+                    <div class="podio-sub-label">🥉 3º Colocado</div>
+                </div>
+            </div>
+            
+            <div class="secao-premios-especiais">
+                <div class="card-premio-quarto">
+                    <h4 style="margin:0; color:#d4af37 !important; font-weight:bold;">🏅 FINALISTA EXTRAORDINÁRIO (4º Lugar)</h4>
+                    <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">{fourth}</h2>
+                </div>
+                
+                <div class="card-premio-flor">
+                    <h3 style="margin:0; color:#ffffff !important; font-weight:900; text-transform:uppercase; letter-spacing:1px;">🌸 TROFÉU MAIOR CANTADOR DE FLOR 🌸</h3>
+                    <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">{rei_flor_nome}</h2>
+                    <p style="margin:0; font-weight:bold; color:#ffe066 !important; font-size:1.1rem;">Dominou o galpão cantando {rei_flor_val} flores!</p>
+                </div>
+            </div>
+            """
+            st.markdown(html_podio_supremo, unsafe_allow_html=True)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
                 novo_registro = {
