@@ -26,36 +26,47 @@ CHAVE_ADMINISTRADOR = "truco123"
 # ==========================================
 URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
 
-PATROCINADORES = {
-    "master": {"nome": "Sicredi", "logo": f"{URL_BASE_IMAGENS}/sicredi.png"},
-    "secundario": {"nome": "Copag", "logo": f"{URL_BASE_IMAGENS}/copag.png"},
-    "mesas": [
-        {"nome": "Sicredi", "logo": f"{URL_BASE_IMAGENS}/sicredi.png"},
-        {"nome": "Copag", "logo": f"{URL_BASE_IMAGENS}/copag.png"},
-        {"nome": "O Chimarrão", "logo": f"{URL_BASE_IMAGENS}/o_chimarrao.png"},
-        {"nome": "Pampa", "logo": f"{URL_BASE_IMAGENS}/pampa.png"},
-        {"nome": "Rio Grande", "logo": f"{URL_BASE_IMAGENS}/rio_grande.png"}
-    ]
-}
-
-# 🛠️ ESTILIZAÇÃO CSS AVANÇADA
+# 🛠️ ESTILIZAÇÃO CSS REVISADA (Correção de contraste para inputs e abas)
 st.markdown("""
     <style>
+    /* Fundo do Telão Principal */
     .stApp { background-color: #1a1a1a; } 
+    
+    /* Barra Lateral */
     section[data-testid="stSidebar"] {
         background-color: #11221a;
         border-right: 2px solid #2c6b56;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
-    h1, h2, h3, p, label, .stMarkdown { color: #ffffff !important; }
+    
+    /* Textos Gerais do Telão */
+    h1, h2, h3, .texto-branco { color: #ffffff !important; }
+    
+    /* 🚨 CORREÇÃO DO DIALOG (Letras escuras nos campos de input para fundo claro) */
+    div[data-testid="stDialog"] label, 
+    div[data-testid="stDialog"] p,
+    div[data-testid="stDialog"] span { 
+        color: #111111 !important; 
+    }
+    div[data-testid="stDialog"] input {
+        color: #111111 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Botão Padrão Ouro */
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
     }
+    
+    /* Caixa de Cronômetro */
     .cronometro-box { 
         background-color: #11221a; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+        text-align: center;
     }
+    
+    /* Caixa de Campeão */
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
     </style>
@@ -181,7 +192,6 @@ def gerar_rodada_web():
     st.session_state.confrontos = []
     st.session_state.placares_rodada_atual = {}
     
-    # Processa Folga (Chapéu)
     if len(lista_rodada) % 2 != 0:
         cand = [j for j in lista_rodada if j not in st.session_state.jogadores_no_chapeu]
         chapeu = random.choice(cand if cand else lista_rodada)
@@ -189,7 +199,6 @@ def gerar_rodada_web():
         st.session_state.jogadores_no_chapeu.add(chapeu)
         st.session_state.confrontos.append((chapeu, "CHAPÉU (Folga)"))
 
-    # Monta as duplas/mesas de jogo consecutivamente
     contador_mesa = 1
     for i in range(0, len(lista_rodada), 2):
         st.session_state.confrontos.append((lista_rodada[i], lista_rodada[i+1]))
@@ -213,25 +222,22 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- INPUT FLUTUANTE (DIALOG) COM COLETOR INTERNO CORRIGIDO ---
+# --- INPUT FLUTUANTE (DIALOG) COM TEXTO CORRIGIDO PARA PRETO ---
 @st.dialog("💾 Lançar Performance da Mesa")
 def dialog_entrada_placares(mesa_id_string, j1, j2):
-    st.markdown(f"**Competidores em Mesa:**")
-    st.markdown(f"🥇 `J1: {j1}` ✖️ 🥈 `J2: {j2}`")
-    st.markdown("---")
+    st.write(f"Competidores: **{j1}** vs **{j2}**")
     
     valores_salvos = st.session_state.placares_rodada_atual.get(mesa_id_string, [0,0,0,0,0,0,False])
     
-    # Criado formulário isolado com ID único baseado na mesa para evitar colisão de dados
     with st.form(key=f"form_isolado_mesa_{mesa_id_string}"):
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown(f"🤠 **{j1}**")
+            st.write(f"🧔 **Jogador 1: {j1}**")
             s1 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[0]), key=f"inp_s1_{mesa_id_string}")
             t1 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[2]), key=f"inp_t1_{mesa_id_string}")
             f1 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[4]), key=f"inp_f1_{mesa_id_string}")
         with col2:
-            st.markdown(f"🤠 **{j2}**")
+            st.write(f"🧔 **Jogador 2: {j2}**")
             s2 = st.number_input("Sets Concluídos:", 0, 2, int(valores_salvos[1]), key=f"inp_s2_{mesa_id_string}")
             t2 = st.number_input("Tentos Ganhos:", 0, 72, int(valores_salvos[3]), key=f"inp_t2_{mesa_id_string}")
             f2 = st.number_input("Flores Cantadas:", 0, 20, int(valores_salvos[5]), key=f"inp_f2_{mesa_id_string}")
@@ -316,12 +322,17 @@ with st.sidebar:
         st.info("Insira a senha técnica para abrir os controles do operador.")
 
 # -------------------------------------------------------------------------
-# ⚔️ CAPA / INSCRIÇÃO OU CENTRAL DE CONFRONTOS DO TELÃO
+# 🏛️ INTERFACE E ABAS DO TELÃO CENTRAL
 # -------------------------------------------------------------------------
-if not st.session_state.torneio_iniciado:
-    st.markdown(f"<h1 style='text-align:center;'>🏆 Sistema de Torneios de Truco</h1>", unsafe_allow_html=True)
-    aba1, aba2 = st.tabs(["🎮 Inscrições", "📜 Galeria"])
-    with aba1:
+st.markdown(f"<h1 style='text-align:center;'>🏆 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
+
+# As abas agora ficam estruturadas e fixas no topo da aplicação
+aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
+
+# --- ABA 1: ARENA DE CONFRONTOS (Mesa de Jogo Ativa) ---
+with aba_arena:
+    if not st.session_state.torneio_iniciado:
+        st.markdown("### 🎮 Inscrições de Competidores")
         nome_torneio = st.text_input("Nome do Evento:", value=st.session_state.get("nome_torneio", "Torneio de Truco do CTG"))
         if is_admin:
             with st.form(key="form_cad", clear_on_submit=True):
@@ -338,15 +349,8 @@ if not st.session_state.torneio_iniciado:
                 st.session_state.classificacao = pd.DataFrame({'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0}).set_index('Jogador')
                 st.session_state.torneio_iniciado = True
                 gerar_rodada_web(); st.rerun()
-    with aba2:
-        if os.path.exists(ARQUIVO_GALERIA):
-            with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
-            if dg: st.dataframe(pd.DataFrame(dg), use_container_width=True, hide_index=True)
-
-else:
-    col_mesas, col_ranking = st.columns([3, 1])
-    
-    with col_mesas:
+    else:
+        # Cronômetro Interno da Arena
         if not st.session_state.campeao and st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tl = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             ta = datetime.now()
@@ -358,6 +362,7 @@ else:
         if st.session_state.campeao:
             st.markdown(f'<div class="box-campeao"><h1>🥇 CAMPEÃO: {st.session_state.campeao}</h1></div>', unsafe_allow_html=True)
         
+        # Modo Eliminatório Mata-Mata
         elif st.session_state.em_matamata:
             st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
             for idx, c in enumerate(st.session_state.confrontos_mm):
@@ -369,15 +374,13 @@ else:
                     if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_mm_{m_str}"):
                         dialog_entrada_placares(m_str, j1, j2)
                         
+        # Modo Rodadas Classificatórias
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
-            
-            # Primeiro passa limpando as folgas para exibi-las em cima
             for j1, j2 in st.session_state.confrontos:
                 if j2 == "CHAPÉU (Folga)":
                     st.markdown(f"🤠 **{j1}** está de folga no Chapéu (Ganha +1V automaticamente).")
             
-            # Lista as mesas de jogo de forma indexada sequencialmente
             contador_real_mesa = 1
             for j1, j2 in st.session_state.confrontos:
                 if j2 != "CHAPÉU (Folga)":
@@ -419,12 +422,25 @@ else:
                         iniciar_fase_matamata(list(df_v.index[:16 if n_insc > 16 else (8 if n_insc >= 8 else 4)]), f_nome)
                     st.rerun()
 
-    with col_ranking:
-        st.markdown("### 📊 Classificação")
-        if st.session_state.classificacao is not None:
-            df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
-            for i, (comp, row) in enumerate(df_rank.iterrows()):
-                st.markdown(f"**{i+1}º {comp}** - `{int(row['Vitorias'])}V` | `S:{int(row['Sets_Ganhos'])}` | `Fl:{int(row['Flores'])}`")
-                st.markdown("<hr style='margin:4px 0; border-color:#22312c;'>", unsafe_allow_html=True)
+# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO ---
+with aba_tabela:
+    st.markdown("### 📊 Tabela de Classificação Atualizada")
+    if st.session_state.classificacao is not None:
+        df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
+        st.dataframe(df_rank, use_container_width=True)
+    else:
+        st.info("O torneio ainda não foi iniciado. Aguardando competidores.")
+
+# --- ABA 3: HISTÓRICO / GALERIA DE CAMPEÕES ---
+with aba_historico:
+    st.markdown("### 🏛️ Galeria de Honra (Torneios Passados)")
+    if os.path.exists(ARQUIVO_GALERIA):
+        with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
+        if dg: 
+            st.dataframe(pd.DataFrame(dg), use_container_width=True, hide_index=True)
+        else:
+            st.info("Nenhum registro encontrado na galeria até o momento.")
+    else:
+        st.info("Nenhum registro encontrado na galeria até o momento.")
 
 st.markdown(f'<div class="creditos">💻 {NOME_CRIADOR} © 2026</div>', unsafe_allow_html=True)
