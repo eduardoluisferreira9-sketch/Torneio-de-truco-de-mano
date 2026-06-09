@@ -35,9 +35,10 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (MÁXIMO CONTRASTE BRANCO E OURO)
+# 🛠️ ESTILIZAÇÃO CSS (VOLTA AO VERDE ESCURO E UPGRADE NO CHAPÉU)
 st.markdown("""
     <style>
+    /* Retornado ao verde escuro original a pedido do usuário */
     .stApp { background-color: #0d231a; } 
     
     section[data-testid="stSidebar"] {
@@ -50,7 +51,6 @@ st.markdown("""
         color: #ffffff !important; 
     }
     
-    /* Força os títulos dos passos do painel administrativo a ficarem Brancos e visíveis */
     .titulo-passo-admin {
         color: #ffffff !important;
         font-weight: bold !important;
@@ -97,7 +97,6 @@ st.markdown("""
         height: 35px !important;
     }
     
-    /* Labels acima das caixas de texto e números totalmente Brancos */
     div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
         color: #ffffff !important;
         font-size: 0.95rem !important;
@@ -119,11 +118,49 @@ st.markdown("""
         text-align: center;
     }
     
-    .chapeu-box {
-        background-color: #113223; border: 2px dashed #d4af37; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;
+    /* NOVO CARD DO CHAPÉU: Muito mais informativo, elegante e imponente */
+    .chapeu-container-novo {
+        background: linear-gradient(135deg, #07140f, #113223);
+        border: 3px solid #d4af37;
+        border-radius: 20px;
+        padding: 25px;
+        margin-top: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0px 8px 25px rgba(0,0,0,0.5);
+    }
+    .chapeu-badge {
+        background-color: #d4af37;
+        color: #000000 !important;
+        padding: 5px 15px;
+        font-weight: bold;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+    }
+    .chapeu-nome {
+        font-size: 2.2rem !important;
+        color: #ffffff !important;
+        font-weight: 900 !important;
+        margin: 5px 0 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .chapeu-subtexto {
+        font-size: 1.1rem !important;
+        color: #d4af37 !important;
+        font-weight: bold !important;
+        margin-bottom: 5px !important;
+    }
+    .chapeu-regras {
+        font-size: 0.9rem !important;
+        color: #a0c0b5 !important;
+        font-style: italic !important;
     }
     
-    /* Pódio Atualizado */
+    /* Pódio */
     .podio-container { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; margin-top: 20px; }
     .card-campeao { background: linear-gradient(135deg, #d4af37, #aa8312); color: #000 !important; width: 80%; padding: 30px; border-radius: 20px; text-align: center; border: 5px solid #fff; box-shadow: 0px 10px 30px rgba(0,0,0,0.5); }
     .card-vice { background-color: #07140f; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
@@ -400,22 +437,18 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
         if not jogo_encerrado:
             st.warning("Definir os Sets para liberar os Tentos.")
         else:
-            # CORRIGIDO: Removido o logo do emoji que sumia e garantido HTML limpo em Branco
             st.markdown(f"<h4 class='titulo-passo-admin'>• TENTOS (Passo 2)</h4>", unsafe_allow_html=True)
             
-            # CASO 1: Vencedor por 2x0 seco (Jogador 1)
             if s1_in == 2 and s2_in == 0:
                 st.info(f"{j1} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j1}", 72, 72, 72, key=f"dir_t1_{m}_r{sem_id}_2x0j1", disabled=True)
                 st.number_input(f"Tentos - {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_r{sem_id}_2x0j1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             
-            # CASO 2: Vencedor por 2x0 seco (Jogador 2)
             elif s2_in == 2 and s1_in == 0:
                 st.number_input(f"Tentos - {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_r{sem_id}_2x0j2", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
                 st.info(f"{j2} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j2}", 72, 72, 72, key=f"dir_t2_{m}_r{sem_id}_2x0j2", disabled=True)
                 
-            # CASO 3: Cenário 2x1 solicitado: Traz caixas de texto Totalmente VAZIAS!
             else:
                 t1_val_str = "" if (t1 == 72 or t1 == 0) else str(t1)
                 t2_val_str = "" if (t2 == 72 or t2 == 0) else str(t2)
@@ -528,9 +561,18 @@ with aba_arena:
             # FASE 1: RODADAS REGULARES (PONTOS CORRIDOS)
             if not st.session_state.em_matamata:
                 st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
+                
+                # REESTILIZAÇÃO DO CHAPÉU CONFORME SOLICITADO
                 for j1, j2 in st.session_state.confrontos:
                     if j2 == "CHAPÉU (Folga)":
-                        st.markdown(f"<div class='chapeu-box'>🎩 CHAPÉU: <b>{j1}</b> está de folga.</div>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                            <div class="chapeu-container-novo">
+                                <div class="chapeu-badge">🎩 Jogador no Chapéu</div>
+                                <div class="chapeu-nome">{j1}</div>
+                                <div class="chapeu-subtexto">Você está de folga nesta rodada!</div>
+                                <div class="chapeu-regras">Sua vitória automática foi computada no sistema (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
+                            </div>
+                        """, unsafe_allow_html=True)
                 
                 cont = 1
                 for j1, j2 in st.session_state.confrontos:
