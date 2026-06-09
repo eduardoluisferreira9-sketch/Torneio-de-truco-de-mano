@@ -593,33 +593,32 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
             
-            # Sanitização segura de strings para evitar quebra do HTML
-            champ = str(st.session_state.campeao)
-            vice = str(st.session_state.vice_campeao)
-            third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
-            fourth = str(st.session_state.quarto_lugar) if st.session_state.quarto_lugar else "N/A"
+            # 🚀 CORREÇÃO DA RENDERIZAÇÃO: Adicionando prefixo fixo para forçar string no HTML do navegador
+            champ = f"👤 Atleta {st.session_state.campeao}"
+            vice = f"👤 Atleta {st.session_state.vice_campeao}"
+            third = f"👤 Atleta {st.session_state.terceiro_lugar}" if st.session_state.terceiro_lugar else "N/A"
+            fourth = f"👤 Atleta {st.session_state.quarto_lugar}" if st.session_state.quarto_lugar else "N/A"
             
-            rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
+            rei_flor_nome = f"👤 Atleta {st.session_state.classificacao['Flores'].idxmax()}"
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
-            # Renderização segura isolando as strings formatadas
             html_podio_supremo = f"""
             <div class="arena-podio-wrapper">
                 <div class="podio-degrau degrau-2">
                     <p class="podio-posicao">2º</p>
-                    <div class="podio-nome-atleta">{vice}</div>
+                    <div class="podio-nome-atleta" style="color: #07140f !important;">{vice}</div>
                     <div class="podio-sub-label">🥈 Vice-Campeão</div>
                 </div>
                 
                 <div class="podio-degrau degrau-1">
                     <p class="podio-posicao">1º</p>
-                    <div class="podio-nome-atleta">{champ}</div>
+                    <div class="podio-nome-atleta" style="color: #07140f !important;">{champ}</div>
                     <div class="podio-sub-label">👑 Rei do Truco / Campeão Supremo</div>
                 </div>
                 
                 <div class="podio-degrau degrau-3">
                     <p class="podio-posicao">3º</p>
-                    <div class="podio-nome-atleta">{third}</div>
+                    <div class="podio-nome-atleta" style="color: #ffffff !important;">{third}</div>
                     <div class="podio-sub-label">🥉 3º Colocado</div>
                 </div>
             </div>
@@ -637,7 +636,6 @@ with aba_arena:
                 </div>
             </div>
             """
-            # ADICIONADO O PARAMETRO OBRIGATÓRIO PARA IMPEDIR CÓDIGO HTML TEXTUAL NA TELA
             st.markdown(html_podio_supremo, unsafe_allow_html=True)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
@@ -679,7 +677,7 @@ with aba_arena:
                                 <div class="chapeu-badge">🎩 Jogador no Chapéu</div>
                                 <div class="chapeu-nome">{j1}</div>
                                 <div class="chapeu-subtexto">Você está de folga nesta rodada!</div>
-                                <div class="chapeu-regras">Sua vitória automática foi computada no system (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
+                                <div class="chapeu-regras">Sua vitória automática foi computada no sistema (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
                             </div>
                         """, unsafe_allow_html=True)
                 
@@ -790,6 +788,7 @@ with aba_arena:
                             if not (s1 == 2 or s2 == 2):
                                 st.error(f"❌ Partida inacabada na mesa {c['id_original']}!"); erro_mm = True
                             if (s1 == 2 and s2 == 1 and (t1 < 48 or t2 < 24)) or (s2 == 2 and s1 == 1 and (t2 < 48 or t1 < 24)):
+                                DocumentError = True
                                 st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos exigidos para o placar 2x1 (48 e 24 tentos)."); erro_mm = True
                         
                         if not erro_mm:
