@@ -6,29 +6,15 @@ import json
 import os
 import qrcode
 import socket
-import requests # 🌐 Nova importação para buscar a imagem na web
-from PIL import Image # 🖼️ Nova importação para tratar o ícone
+import requests 
+from PIL import Image 
 from io import BytesIO
 from datetime import datetime, timedelta
 
-# ==========================================
-# 🖼️ BANCO DE DADOS DE IMAGENS VIA INTERNET
-# ==========================================
-URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
-
-# Tentativa de carregar a imagem do Baralho Espanhol para o Ícone da Página
-icone_pagina = "🃏" # Emoji de backup caso a internet falhe ou o link mude
-try:
-    resposta = requests.get(f"{URL_BASE_IMAGENS}/baralho_espanhol.png", timeout=5)
-    if resposta.status_code == 200:
-        icone_pagina = Image.open(BytesIO(resposta.content))
-except Exception:
-    pass
-
-# 🃏 CONFIGURAÇÃO DA PÁGINA (Agora usando a imagem da biblioteca)
+# 🃏 CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="Central de Torneios de Truco - Planta Baixa",
-    page_icon=icone_pagina,
+    page_icon="🃏",
     layout="wide"
 )
 
@@ -37,7 +23,21 @@ ARQUIVO_BACKUP = "torneio_atual_pb.json"
 ARQUIVO_GALERIA = "galeria_campeoes.json"
 CHAVE_ADMINISTRADOR = "truco123"
 
-# 🛠️ ESTILIZAÇÃO CSS
+# ==========================================
+# 🖼️ BANCO DE DADOS DE IMAGENS VIA INTERNET
+# ==========================================
+URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
+
+# Tentativa de carregar a imagem do Baralho Espanhol para o Ícone da Página
+icone_pagina = "🃏" 
+try:
+    resposta = requests.get(f"{URL_BASE_IMAGENS}/baralho_espanhol.png", timeout=5)
+    if resposta.status_code == 200:
+        icone_pagina = Image.open(BytesIO(resposta.content))
+except Exception:
+    pass
+
+# 🛠️ ESTILIZAÇÃO CSS (Atualizada com o Estilo Gaudério)
 st.markdown("""
     <style>
     /* Fundo Geral */
@@ -50,12 +50,12 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
-    /* Textos, Títulos e Labels Principais em Branco de Alto Contraste */
+    /* Textos, Títulos e Labels Principais */
     h1, h2, h3, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
         color: #ffffff !important; 
     }
     
-    /* Customização dos Inputs (Campos de Texto) no Painel Principal */
+    /* Customização dos Inputs */
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -70,10 +70,10 @@ st.markdown("""
     }
     
     /* Abas */
-    button[data-baseweb="tab"] { color: #a0c0b5 !important; }
+    button[data-baseweb="tab"] { color: #a0c0b5 !important; font-size: 1.1rem !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
 
-    /* Correção do Pop-up de Lançamento (Dialog) */
+    /* Pop-up de Lançamento (Dialog) */
     div[data-testid="stDialog"] label, 
     div[data-testid="stDialog"] p,
     div[data-testid="stDialog"] span { 
@@ -109,6 +109,51 @@ st.markdown("""
     
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
+
+    /* 🐴 TABELA ESTILO CAMPEIRO / GAUDÉRIO */
+    .tabela-campeira {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 25px 0;
+        font-size: 1.05rem;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 3px solid #5a3825; /* Cor de Couro / Guaiaca */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .tabela-campeira thead tr {
+        background-color: #07140f;
+        color: #d4af37 !important;
+        text-align: left;
+        font-weight: bold;
+    }
+    .tabela-campeira th, .tabela-campeira td {
+        padding: 14px 18px;
+        text-align: center;
+    }
+    .tabela-campeira th:nth-child(2), .tabela-campeira td:nth-child(2) {
+        text-align: left; /* Nome do Gaúcho alinhado à esquerda */
+    }
+    .tabela-campeira tbody tr {
+        border-bottom: 1px solid #1c4234;
+        background-color: #113223;
+        color: #ffffff;
+    }
+    .tabela-campeira tbody tr:nth-of-type(even) {
+        background-color: #0b2016; /* Alternância rústica de verde */
+    }
+    .tabela-campeira tbody tr:hover {
+        background-color: #16412e;
+    }
+    .posicao-destaque {
+        font-weight: bold;
+        color: #d4af37;
+    }
+    .primeiro-lugar {
+        background-color: rgba(212, 175, 55, 0.2) !important;
+        border-left: 5px solid #d4af37;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -468,14 +513,51 @@ with aba_arena:
                         iniciar_fase_matamata(list(df_v.index[:16 if n_insc > 16 else (8 if n_insc >= 8 else 4)]), f_nome)
                     st.rerun()
 
-# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO ---
+# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO (Montada com Tabela Campeira HTML) ---
 with aba_tabela:
-    st.markdown("### 📊 Tabela de Classificação Atualizada")
+    st.markdown("### 📊 Tabela de Classificação Tradicionalista")
     if st.session_state.classificacao is not None:
         df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
-        st.dataframe(df_rank, use_container_width=True)
+        
+        # Estruturando a tabela campeira em HTML
+        html_tabela = """
+        <table class="tabela-campeira">
+            <thead>
+                <tr>
+                    <th>Lugar</th>
+                    <th>🧔 Vivente (Jogador)</th>
+                    <th>🤝 Parelhas Ganhas (Vitórias)</th>
+                    <th>🃏 Quedas de Vantagem (Sets)</th>
+                    <th>🎯 Tentos em Pelo (Pró)</th>
+                    <th>🛡️ Tentos Levados (Contra)</th>
+                    <th>⚖️ Saldo de Campo (Tentos)</th>
+                    <th>🌸 Flor do Campo (Flores)</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        for idx, (jogador, row) in enumerate(df_rank.iterrows()):
+            classe_linha = "class='primeiro-lugar'" if idx == 0 else ""
+            posicao_texto = "🥇 1º" if idx == 0 else ("🥈 2º" if idx == 1 else ("🥉 3º" if idx == 2 else f"{idx+1}º"))
+            
+            html_tabela += f"""
+                <tr {classe_linha}>
+                    <td class="posicao-destaque">{posicao_texto}</td>
+                    <td style="font-weight: bold;">{jogador}</td>
+                    <td style="color: #d4af37; font-weight: bold;">{int(row['Vitorias'])}</td>
+                    <td>{int(row['Sets_Ganhos'])}s</td>
+                    <td>{int(row['Tentos_Pro'])}</td>
+                    <td>{int(row['Tentos_Contra'])}</td>
+                    <td style="color: {'#4bef4b' if row['Saldo_Tentos'] >= 0 else '#ff4b4b'}">{int(row['Saldo_Tentos'])}</td>
+                    <td style="color: #ff69b4;">🌸 {int(row['Flores'])}</td>
+                </tr>
+            """
+            
+        html_tabela += "</tbody></table>"
+        st.markdown(html_tabela, unsafe_allow_html=True)
     else:
-        st.info("O torneio ainda não foi iniciado. Aguardando competidores.")
+        st.info("O torneio ainda não foi iniciado. Aguardando a peonada se inscrever.")
 
 # --- ABA 3: HISTÓRICO / GALERIA DE CAMPEÕES ---
 with aba_historico:
