@@ -286,12 +286,12 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     salvar_estado_no_disco()
 
 # =========================================================================
-# 🏛️ MONTAGEM DA PAISAGEM DE TRÊS COLUNAS (WIDE SCREEN INVERTIDO)
+# 🏛️ MONTAGEM DA PAISAGEM DE TRÊS COLUNAS
 # =========================================================================
 col_esquerda, col_centro, col_direita = st.columns([1, 2, 1])
 
 # -------------------------------------------------------------------------
-# 🔐 COLUNA DA ESQUERDA: Painel Retrátil do Operador (Aba abre/fecha limpa)
+# 🔐 COLUNA DA ESQUERDA: Painel do Operador + Patrocínios Principais
 # -------------------------------------------------------------------------
 with col_esquerda:
     st.markdown("### ⚙️ Gestão Técnica")
@@ -340,12 +340,26 @@ with col_esquerda:
                 st.session_state.clear()
                 st.rerun()
         else:
-            st.info("Insira a chave para liberar os controles de tempo, rede e reinicialização.")
+            st.info("Insira a chave para liberar os controles.")
 
-    # Propaganda Secundária abaixo do expander técnico
-    if os.path.exists(PATROCINADORES["secundario"]["logo"]):
-        st.markdown("---")
-        st.image(PATROCINADORES["secundario"]["logo"], use_container_width=True, caption="Parceiro Oficial")
+    # 🌟 ESPAÇO ATUALIZADO: PATROCÍNIOS PRINCIPAIS DO TORNEIO (ABAIXO DO PAINEL)
+    st.markdown("---")
+    st.markdown("<p style='text-align: center; font-size: 0.95rem; font-weight: bold; color: #d4af37 !important; margin-bottom: 15px;'>⭐️ PATROCÍNIO PRINCIPAL ⭐️</p>", unsafe_allow_html=True)
+    
+    # Criando duas colunas para colocar as duas marcas principais lado a lado de forma elegante
+    col_patro1, col_patro2 = st.columns(2)
+    
+    with col_patro1:
+        if os.path.exists(PATROCINADORES["master"]["logo"]):
+            st.image(PATROCINADORES["master"]["logo"], use_container_width=True, caption="Master")
+        else:
+            st.caption(PATROCINADORES["master"]["nome"])
+            
+    with col_patro2:
+        if os.path.exists(PATROCINADORES["secundario"]["logo"]):
+            st.image(PATROCINADORES["secundario"]["logo"], use_container_width=True, caption="Parceiro Oficial")
+        else:
+            st.caption(PATROCINADORES["secundario"]["nome"])
 
 
 # -------------------------------------------------------------------------
@@ -647,11 +661,6 @@ with col_direita:
     else:
         st.info("Aguardando o início do torneio para gerar as pontuações dinâmicas.")
     st.markdown('</div>', unsafe_allow_html=True)
-
-    # Propaganda Fixa abaixo do ranking
-    if os.path.exists(PATROCINADORES["master"]["logo"]):
-        st.markdown("---")
-        st.image(PATROCINADORES["master"]["logo"], use_container_width=True, caption="Patrocinador Master")
 
 
 # --- RODAPÉ COM OS PARCEIROS DAS MESAS ---
