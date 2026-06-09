@@ -35,7 +35,7 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS
+# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (ALTO CONTRASTE)
 st.markdown("""
     <style>
     .stApp { background-color: #0d231a; } 
@@ -50,26 +50,41 @@ st.markdown("""
         color: #ffffff !important; 
     }
     
+    /* Títulos de Mesas e Fases com Destaque Forte */
+    .titulo-mesa-destaque {
+        color: #d4af37 !important;
+        font-size: 1.6rem !important;
+        font-weight: bold !important;
+        border-left: 5px solid #d4af37;
+        padding-left: 10px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
-        border: 1px solid #1c4234 !important;
+        border: 2px solid #d4af37 !important;
         text-align: center !important;
         font-weight: bold !important;
+        font-size: 1.1rem !important;
     }
     
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
-        border: 1px solid #d4af37 !important;
+        border: 2px solid #d4af37 !important;
         text-align: center !important;
         font-weight: bold !important;
         font-size: 1.1rem !important;
         height: 35px !important;
     }
     div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
-        color: #a0c0b5 !important;
-        font-size: 0.8rem !important;
+        color: #ffffff !important;
+        font-size: 0.9rem !important;
+        font-weight: bold !important;
     }
     
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
@@ -79,6 +94,7 @@ st.markdown("""
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
         border: 1px solid #aa8312 !important;
+        font-size: 1.1rem !important;
     }
     
     .cronometro-box { 
@@ -90,12 +106,13 @@ st.markdown("""
         background-color: #113223; border: 2px dashed #d4af37; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;
     }
     
+    /* Pódio Atualizado com Alto Contraste */
     .podio-container { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; margin-top: 20px; }
     .card-campeao { background: linear-gradient(135deg, #d4af37, #aa8312); color: #000 !important; width: 80%; padding: 30px; border-radius: 20px; text-align: center; border: 5px solid #fff; box-shadow: 0px 10px 30px rgba(0,0,0,0.5); }
-    .card-vice { background-color: #c0c0c0; color: #000 !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #fff; }
+    .card-vice { background-color: #07140f; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
     .honor-row { display: flex; gap: 15px; width: 70%; justify-content: center; }
-    .card-terceiro { background-color: #cd7f32; color: #000 !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #fff; }
-    .card-quarto { background-color: #113223; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #a0c0b5; }
+    .card-terceiro { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #cd7f32; }
+    .card-quarto { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #1c4234; }
     .card-flor { background-color: #ff69b4; color: #000 !important; width: 60%; padding: 10px; border-radius: 50px; text-align: center; font-weight: bold; margin-top: 20px; border: 2px solid #fff; }
     
     .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
@@ -332,7 +349,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
             <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #000; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; border: 1px solid #fff;">{j1}</div>
         </div>
         <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 12px; width: 85%; margin-top: 95px; text-align: center;">
-            <div style="font-size: 0.8rem; color: #a0c0b5; font-weight: bold; letter-spacing: 2px;">🎰 MESA {mesa_num}</div>
+            <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold; letter-spacing: 2px;">🎰 MESA {mesa_num}</div>
             <hr style="margin: 8px 0; border-top: 1px solid #1c4234;">
             <div style="display: flex; justify-content: space-around; align-items: center; font-size: 2rem; font-weight: bold;">
                 <div style="color: #d4af37;">{int(s1)}<span style="font-size:1.1rem;">s</span> {int(t1)}<span style="font-size:1.1rem;">t</span></div>
@@ -357,7 +374,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     c1, c2 = st.columns([1, 1])
     
     with c1:
-        st.markdown(f"### ⚔️ Sets (Passo 1)")
+        st.markdown(f"#### ⚔️ Sets (Passo 1)")
         s1_in = st.number_input(f"Sets - {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
         s2_in = st.number_input(f"Sets - {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -365,9 +382,9 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     
     with c2:
         if not jogo_encerrado:
-            st.warning("⚠️ Definir Sets para liberar os Tentos.")
+            st.warning("⚠️ Definir os Sets para liberar os Tentos.")
         else:
-            st.markdown("### 🪙 Tentos (Passo 2)")
+            st.markdown(f"#### 🪙 Tentos (Passo 2)")
             
             # CASO 1: Vencedor por 2x0 seco (Jogador 1)
             if s1_in == 2 and s2_in == 0:
@@ -383,14 +400,13 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
                 
             # CASO 3: Cenário 2x1 solicitado: Traz caixas de texto Totalmente VAZIAS!
             else:
-                # Se na memória interna já tem o valor salvo do banco, ele converte para texto, senão deixa "" (vazio)
                 t1_val_str = "" if (t1 == 72 or t1 == 0) else str(t1)
                 t2_val_str = "" if (t2 == 72 or t2 == 0) else str(t2)
                 
                 st.text_input(f"Digite Tentos - {j1}", value=t1_val_str, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
                 st.text_input(f"Digite Tentos - {j2}", value=t2_val_str, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
             
-            st.markdown("### 🌸 Flores (Passo 3)")
+            st.markdown(f"#### 🌸 Flores (Passo 3)")
             st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             st.number_input(f"Flores - {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -409,7 +425,7 @@ with st.sidebar:
             salvar_estado_no_disco(); st.rerun()
         st.markdown("---")
         if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
-            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUIVO_GALERIA)
+            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUEMA_GALERIA)
             st.success("Galeria de campeões resetada com sucesso!")
             st.rerun()
         if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)"):
@@ -492,6 +508,7 @@ with aba_arena:
 
             sem_id = st.session_state.get("semente_reset", 1)
 
+            # FASE 1: RODADAS REGULARES (PONTOS CORRIDOS)
             if not st.session_state.em_matamata:
                 st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
                 for j1, j2 in st.session_state.confrontos:
@@ -504,7 +521,9 @@ with aba_arena:
                         m = str(cont)
                         p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                         
-                        st.markdown(f"---")
+                        # TÍTULO DESTACADO DA MESA EM AMARELO DOUTO
+                        st.markdown(f'<div class="titulo-mesa-destaque">🎰 MESA {m}</div>', unsafe_allow_html=True)
+                        
                         if is_admin:
                             col_painel, col_entradas = st.columns([2, 3])
                             with col_painel: 
@@ -528,7 +547,6 @@ with aba_arena:
                                 if not (s1 == 2 or s2 == 2):
                                     st.error(f"❌ Erro na Mesa {m_c}: Partida inacabada! Alguém precisa ter 2 sets."); erro_validacao = True
                                 
-                                # Verificação rígida dos mínimos do 2x1 obtidos do text_input
                                 if s1 == 2 and s2 == 1:
                                     if t1 < 48: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 2 Sets ({j1}) precisa ter no mínimo 48 tentos!"); erro_validacao = True
                                     if t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 1 Set ({j2}) precisa ter no mínimo 24 tentos!"); erro_validacao = True
@@ -560,13 +578,14 @@ with aba_arena:
                             if st.session_state.rodada_atual <= 5: gerar_rodada_web()
                             else:
                                 n_in = len(st.session_state.jogadores)
-                                f_n = "OITAVAS" if n_in > 16 else ("QUARTAS" if n_in >= 8 else "SEMIFINAL")
+                                f_n = "OITAVAS DE FINAL" if n_in > 16 else ("QUARTAS DE FINAL" if n_in >= 8 else "SEMIFINAL")
                                 dv = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
                                 iniciar_fase_matamata(list(dv.index[:16 if n_in>16 else (8 if n_in>=8 else 4)]), f_n)
                             st.rerun()
 
+            # FASE 2: MATA-MATAS ATÉ A FINAL (COM CORES FORTES E IDENTIFICAÇÃO CLARA)
             else:
-                st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
+                st.markdown(f"### ⚡ Eliminatórias Correndo: {st.session_state.fase_matamata}")
                 lista_m = st.session_state.confrontos_mm
                 if st.session_state.fase_matamata == "FINAL E TERCEIRO":
                     lista_m = sorted(st.session_state.confrontos_mm, key=lambda x: 0 if x["tipo"]=="final" else 1)
@@ -575,19 +594,30 @@ with aba_arena:
                     m = c["id_original"]
                     j1, j2 = c["j1"], c["j2"]
                     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
-                    tit = "🥇 GRANDE FINAL" if c["tipo"]=="final" else ("🥉 DISPUTA 3º LUGAR" if c["tipo"]=="3place" else f"MESA {m}")
                     
-                    st.markdown(f"#### {tit}")
+                    # Identificadores com o nome exato do Mata-Mata e da Mesa correspondente
+                    if c["tipo"] == "final":
+                        tit = "🏆 GRANDE FINAL DO TORNEIO"
+                    elif c["tipo"] == "3place":
+                        tit = "🥉 DISPUTA DE 3º E 4º LUGAR"
+                    else:
+                        tit = f"⚔️ {st.session_state.fase_matamata} - MESA {m}"
+                    
+                    # RENDERIZAÇÃO DO TÍTULO EM TEXTO DESTACADO (AMARELO NO VERDE ESCURO)
+                    st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
+                    
                     if is_admin:
                         col_p_mm, col_e_mm = st.columns([2, 3])
-                        with col_p_mm: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                        with col_e_mm: renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
+                        with col_p_mm: 
+                            desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
+                        with col_e_mm: 
+                            renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
                     else: 
                         desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
 
                 if is_admin:
                     st.markdown("---")
-                    if st.button("🏆 Confirmar Fase e Avançar", type="primary"):
+                    if st.button("🏆 Confirmar Resultados e Avançar Fase", type="primary"):
                         erro_mm = False
                         for c in st.session_state.confrontos_mm:
                             p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
@@ -610,8 +640,8 @@ with aba_arena:
                                 elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
 
                             f_at = st.session_state.fase_matamata
-                            if f_at == "OITAVAS": iniciar_fase_matamata(venc, "QUARTAS")
-                            elif f_at == "QUARTAS": iniciar_fase_matamata(venc, "SEMIFINAL")
+                            if f_at == "OITAVAS DE FINAL": iniciar_fase_matamata(venc, "QUARTAS DE FINAL")
+                            elif f_at == "QUARTAS DE FINAL": iniciar_fase_matamata(venc, "SEMIFINAL")
                             elif f_at == "SEMIFINAL":
                                 limpar_placares_memoria()
                                 st.session_state.fase_matamata = "FINAL E TERCEIRO"
