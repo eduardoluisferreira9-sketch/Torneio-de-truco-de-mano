@@ -35,10 +35,9 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS (VOLTA AO VERDE ESCURO E UPGRADE NO CHAPÉU)
+# 🛠️ ESTILIZAÇÃO CSS (INTERFACE GERAL E ELEMENTOS ESPECÍFICOS)
 st.markdown("""
     <style>
-    /* Retornado ao verde escuro original a pedido do usuário */
     .stApp { background-color: #0d231a; } 
     
     section[data-testid="stSidebar"] {
@@ -63,7 +62,6 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* Títulos de Mesas e Fases com Destaque Forte */
     .titulo-mesa-destaque {
         color: #d4af37 !important;
         font-size: 1.6rem !important;
@@ -76,7 +74,6 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
-    /* Inputs de Texto (Tentos 2x1) */
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -86,7 +83,6 @@ st.markdown("""
         font-size: 1.1rem !important;
     }
     
-    /* Inputs Numéricos */
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -118,7 +114,6 @@ st.markdown("""
         text-align: center;
     }
     
-    /* NOVO CARD DO CHAPÉU: Muito mais informativo, elegante e imponente */
     .chapeu-container-novo {
         background: linear-gradient(135deg, #07140f, #113223);
         border: 3px solid #d4af37;
@@ -130,47 +125,139 @@ st.markdown("""
         box-shadow: 0px 8px 25px rgba(0,0,0,0.5);
     }
     .chapeu-badge {
-        background-color: #d4af37;
-        color: #000000 !important;
-        padding: 5px 15px;
-        font-weight: bold;
-        border-radius: 50px;
-        font-size: 0.9rem;
-        display: inline-block;
-        margin-bottom: 10px;
-        text-transform: uppercase;
+        background-color: #d4af37; color: #000000 !important; padding: 5px 15px;
+        font-weight: bold; border-radius: 50px; font-size: 0.9rem; display: inline-block;
+        margin-bottom: 10px; text-transform: uppercase;
     }
     .chapeu-nome {
-        font-size: 2.2rem !important;
-        color: #ffffff !important;
-        font-weight: 900 !important;
-        margin: 5px 0 !important;
+        font-size: 2.2rem !important; color: #ffffff !important; font-weight: 900 !important;
+        margin: 5px 0 !important; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .chapeu-subtexto { font-size: 1.1rem !important; color: #d4af37 !important; font-weight: bold !important; margin-bottom: 5px !important; }
+    .chapeu-regras { font-size: 0.9rem !important; color: #a0c0b5 !important; font-style: italic !important; }
+    
+    .galeria-card {
+        background: linear-gradient(135deg, #07140f, #143527);
+        border: 3px double #d4af37;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.4);
+    }
+    .galeria-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px dashed #1c4234;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    .galeria-titulo-evento { font-size: 1.4rem; color: #d4af37; font-weight: bold; }
+    .galeria-data { font-size: 0.9rem; color: #a0c0b5; font-weight: bold; }
+    .galeria-corpo { display: flex; flex-direction: column; gap: 8px; }
+    .galeria-linha-campeao { font-size: 1.6rem; color: #ffffff; font-weight: bold; }
+    .galeria-ouro { color: #d4af37 !important; font-weight: 900; }
+    .galeria-linha-secundaria { font-size: 1.1rem; color: #e0e0e0; }
+    
+    /* 🏆 NOVO DESIGN SUPREMO DO PODIO DE PREMIAÇÃO */
+    .arena-podio-wrapper {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 20px;
+        margin: 50px auto 30px auto;
+        max-width: 1000px;
+        font-family: sans-serif;
+    }
+    .podio-degrau {
+        flex: 1;
+        border-radius: 20px 20px 10px 10px;
+        text-align: center;
+        padding: 30px 15px;
+        box-shadow: 0px 15px 35px rgba(0,0,0,0.7);
+        position: relative;
+        transition: transform 0.3s ease;
+    }
+    .degrau-1 {
+        background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312);
+        height: 280px;
+        border: 4px solid #ffffff;
+        box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7);
+        z-index: 3;
+    }
+    .degrau-2 {
+        background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070);
+        height: 220px;
+        border: 3px solid #e0e0e0;
+        z-index: 2;
+    }
+    .degrau-3 {
+        background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18);
+        height: 180px;
+        border: 3px solid #e69d5e;
+        z-index: 1;
+    }
+    .podio-posicao {
+        font-size: 3.5rem;
+        font-weight: 900;
+        margin: 0;
+        line-height: 1;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    }
+    .degrau-1 .podio-posicao { color: #000000 !important; }
+    .degrau-2 .podio-posicao { color: #111111 !important; }
+    .degrau-3 .podio-posicao { color: #ffffff !important; }
+    
+    .podio-nome-atleta {
+        font-size: 1.8rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        margin: 15px 0 5px 0;
+        letter-spacing: 1px;
+        word-wrap: break-word;
+    }
+    .degrau-1 .podio-nome-atleta { color: #07140f !important; text-shadow: 1px 1px 0px rgba(255,255,255,0.5); }
+    .degrau-2 .podio-nome-atleta { color: #07140f !important; }
+    .degrau-3 .podio-nome-atleta { color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
+
+    .podio-sub-label {
+        font-size: 0.9rem;
+        font-weight: bold;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    .chapeu-subtexto {
-        font-size: 1.1rem !important;
-        color: #d4af37 !important;
-        font-weight: bold !important;
-        margin-bottom: 5px !important;
+    .degrau-1 .podio-sub-label { color: #403000 !important; }
+    .degrau-2 .podio-sub-label { color: #222222 !important; }
+    .degrau-3 .podio-sub-label { color: #f0f0f0 !important; }
+
+    /* Cards Complementares (4º Lugar e Rei da Flor) */
+    .secao-premios-especiais {
+        display: flex;
+        justify-content: center;
+        gap: 25px;
+        max-width: 1000px;
+        margin: 20px auto 40px auto;
     }
-    .chapeu-regras {
-        font-size: 0.9rem !important;
-        color: #a0c0b5 !important;
-        font-style: italic !important;
+    .card-premio-quarto {
+        flex: 1;
+        background: linear-gradient(135deg, #07140f, #1c4234);
+        border: 2px solid #d4af37;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
     }
-    
-    /* Pódio */
-    .podio-container { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; margin-top: 20px; }
-    .card-campeao { background: linear-gradient(135deg, #d4af37, #aa8312); color: #000 !important; width: 80%; padding: 30px; border-radius: 20px; text-align: center; border: 5px solid #fff; box-shadow: 0px 10px 30px rgba(0,0,0,0.5); }
-    .card-vice { background-color: #07140f; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
-    .honor-row { display: flex; gap: 15px; width: 70%; justify-content: center; }
-    .card-terceiro { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #cd7f32; }
-    .card-quarto { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #1c4234; }
-    .card-flor { background-color: #ff69b4; color: #000 !important; width: 60%; padding: 10px; border-radius: 50px; text-align: center; font-weight: bold; margin-top: 20px; border: 2px solid #fff; }
+    .card-premio-flor {
+        flex: 1;
+        background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4);
+        border: 3px solid #ffffff;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0px 10px 25px rgba(255,105,180,0.3), 0px 8px 20px rgba(0,0,0,0.5);
+    }
     
     .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
-    
     .creditos { text-align: center; color: #ffffff !important; font-size: 0.8rem; margin-top: 50px; }
 
     div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #113223 !important; width: 100%; }
@@ -506,26 +593,42 @@ with aba_arena:
                 gerar_rodada_web(); st.rerun()
     else:
         if st.session_state.campeao:
-            st.markdown("<h2 style='text-align:center;'>🏆 RESULTADO FINAL</h2>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
             rei_flor_nome = st.session_state.classificacao['Flores'].idxmax()
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
+            # 🥇 PÓDIO TRIDIMENSIONAL REESTILIZADO (Degraus: 2º, 1º, 3º)
             st.markdown(f"""
-                <div class="podio-container">
-                    <div class="card-campeao">
-                        <h1 style="font-size: 4rem;">🥇 1º LUGAR</h1>
-                        <h2 style="font-size: 3rem;">{st.session_state.campeao}</h2>
-                        <p>GRANDE CAMPEÃO DO CTG</p>
+                <div class="arena-podio-wrapper">
+                    <div class="podio-degrau degrau-2">
+                        <p class="podio-posicao">2º</p>
+                        <div class="podio-nome-atleta">{st.session_state.vice_campeao}</div>
+                        <div class="podio-sub-label">🥈 Vice-Campeão</div>
                     </div>
-                    <div class="card-vice">
-                        <h2>🥈 2º LUGAR: {st.session_state.vice_campeao}</h2>
+                    
+                    <div class="podio-degrau degrau-1">
+                        <p class="podio-posicao">1º</p>
+                        <div class="podio-nome-atleta">{st.session_state.campeao}</div>
+                        <div class="podio-sub-label">👑 Rei do Truco / Campeão Supremo</div>
                     </div>
-                    <div class="honor-row">
-                        <div class="card-terceiro"><h3>🥉 3º: {st.session_state.terceiro_lugar}</h3></div>
-                        <div class="card-quarto"><h3>🏅 4º: {st.session_state.quarto_lugar}</h3></div>
+                    
+                    <div class="podio-degrau degrau-3">
+                        <p class="podio-posicao">3º</p>
+                        <div class="podio-nome-atleta">{st.session_state.terceiro_lugar if st.session_state.terceiro_lugar else 'N/A'}</div>
+                        <div class="podio-sub-label">🥉 3º Colocado</div>
                     </div>
-                    <div class="card-flor">
-                        🌸 REI DA FLOR DO CAMPEONATO: {rei_flor_nome} ({rei_flor_val} flores cantadas)
+                </div>
+                
+                <div class="secao-premios-especiais">
+                    <div class="card-premio-quarto">
+                        <h4 style="margin:0; color:#d4af37 !important; font-weight:bold;">🏅 FINALISTA EXTRAÓRDINÁRIO (4º Lugar)</h4>
+                        <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">{st.session_state.quarto_lugar if st.session_state.quarto_lugar else 'N/A'}</h2>
+                    </div>
+                    
+                    <div class="card-premio-flor">
+                        <h3 style="margin:0; color:#ffffff !important; font-weight:900; text-transform:uppercase; letter-spacing:1px;">🌸 TROFÉU MAIOR CANTADOR DE FLOR 🌸</h3>
+                        <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">{rei_flor_nome}</h2>
+                        <p style="margin:0; font-weight:bold; color:#ffe066 !important; font-size:1.1rem;">Dominou o galpão cantando {rei_flor_val} flores!</p>
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -534,9 +637,9 @@ with aba_arena:
                 novo_registro = {
                     "Data": datetime.now().strftime("%d/%m/%Y"),
                     "Torneio": st.session_state.nome_torneio,
-                    "Campeão": st.session_state.campeao,
+                    "Campeao": st.session_state.campeao,
                     "Vice": st.session_state.vice_campeao,
-                    "Rei da Flor": f"{rei_flor_nome} ({rei_flor_val})"
+                    "ReiDaFlor": f"{rei_flor_nome} ({rei_flor_val} fl.)"
                 }
                 lista_g = []
                 if os.path.exists(ARQUIVO_GALERIA):
@@ -546,7 +649,7 @@ with aba_arena:
                 lista_g.append(novo_registro)
                 with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
                     json.dump(lista_g, f, ensure_ascii=False, indent=4)
-                st.success("Campeão imortalizado na galeria!")
+                st.success("Campeões imortalizados com sucesso na galeria histórica!")
         
         else:
             if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
@@ -562,7 +665,6 @@ with aba_arena:
             if not st.session_state.em_matamata:
                 st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
                 
-                # REESTILIZAÇÃO DO CHAPÉU CONFORME SOLICITADO
                 for j1, j2 in st.session_state.confrontos:
                     if j2 == "CHAPÉU (Folga)":
                         st.markdown(f"""
@@ -749,13 +851,27 @@ with aba_tabela:
                         st.markdown("---")
             st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ABA 3: HISTÓRICO DE CAMPEÕES ---
+# --- ABA 3: GALERIA DE CAMPEÕES ---
 with aba_historico:
     st.markdown("### 📜 Galeria Tradicionalista de Campeões")
     if os.path.exists(ARQUIVO_GALERIA):
         try:
             with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
-            if dg: st.table(pd.DataFrame(dg))
+            if dg:
+                for registro in reversed(dg):
+                    st.markdown(f"""
+                        <div class="galeria-card">
+                            <div class="galeria-header">
+                                <span class="galeria-titulo-evento">🏆 {registro.get('Torneio', 'Torneio sem Nome')}</span>
+                                <span class="galeria-data">📅 Data: {registro.get('Data', 'N/A')}</span>
+                            </div>
+                            <div class="galeria-corpo">
+                                <div class="galeria-linha-campeao">🥇 Grande Campeão: <span class="galeria-ouro">{registro.get('Campeao', 'N/A')}</span></div>
+                                <div class="galeria-linha-secundaria">🥈 Vice-Campeão: {registro.get('Vice', 'N/A')}</div>
+                                <div class="galeria-linha-secundaria">🌸 Rei da Flor: {registro.get('ReiDaFlor', 'N/A')}</div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
             else: st.info("A galeria está vazia por enquanto.")
         except Exception: st.info("A galeria está vazia por enquanto.")
     else: st.info("Nenhum torneio foi imortalizado nesta galeria ainda.")
