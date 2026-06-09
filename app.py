@@ -37,7 +37,7 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS (Forçando a separação nítida das linhas do st.table)
+# 🛠️ ESTILIZAÇÃO CSS (Atualizada com divisórias em Branco de Alto Contraste)
 st.markdown("""
     <style>
     /* Fundo Geral */
@@ -110,22 +110,25 @@ st.markdown("""
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
 
-    /* 📊 CUSTOMIZAÇÃO DE GRADE ESTÁTICA PARA O ST.TABLE */
+    /* 📊 FORÇAR DIVISÓRIAS BRANCAS DE ALTO CONTRASTE NO ST.TABLE */
     div[data-testid="stTable"] table {
-        border: 3px solid #5a3825 !important; /* Borda grossa externa cor guaiaca/couro */
+        border: 3px solid #ffffff !important; /* Moldura externa branca pura */
         background-color: #113223 !important;
+        width: 100%;
     }
     div[data-testid="stTable"] th {
         background-color: #07140f !important;
         color: #d4af37 !important;
         font-weight: bold !important;
-        border: 2px solid #5a3825 !important; /* Divisórias dos cabeçalhos */
+        border: 2px solid #ffffff !important; /* Divisórias dos cabeçalhos em branco */
         text-align: center !important;
+        font-size: 1.1rem;
     }
     div[data-testid="stTable"] td {
         color: #ffffff !important;
-        border: 2px solid #3d2214 !important; /* Divisórias internas bem marcadas e visíveis */
+        border: 2px solid #ffffff !important; /* Linhas de grade internas brancas puras */
         text-align: center !important;
+        font-size: 1.05rem;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -486,13 +489,13 @@ with aba_arena:
                         iniciar_fase_matamata(list(df_v.index[:16 if n_insc > 16 else (8 if n_insc >= 8 else 4)]), f_nome)
                     st.rerun()
 
-# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO (Forçando Grades Fortes com st.table) ---
+# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO (Divisórias Brancas Fortes com st.table) ---
 with aba_tabela:
     st.markdown("### 📊 Tabela de Classificação Atualizada")
     if st.session_state.classificacao is not None:
         df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
         
-        # O st.table desenha uma tabela estática perfeita onde as divisórias do CSS funcionam 100%
+        # st.table com estilo branco injetado para visualização perfeita
         st.table(df_rank)
     else:
         st.info("O torneio ainda não foi iniciado. Aguardando competidores.")
