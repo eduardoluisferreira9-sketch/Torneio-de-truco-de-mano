@@ -50,7 +50,14 @@ st.markdown("""
         color: #ffffff !important; 
     }
     
-    /* Alertas e textos informativos do Streamlit forçados para Branco/Amarelo */
+    /* Força os títulos dos passos do painel administrativo a ficarem Brancos e visíveis */
+    .titulo-passo-admin {
+        color: #ffffff !important;
+        font-weight: bold !important;
+        margin-top: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    
     div[data-testid="stNotification"] p {
         color: #ffffff !important;
         font-weight: bold !important;
@@ -383,7 +390,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     c1, c2 = st.columns([1, 1])
     
     with c1:
-        st.markdown(f"#### <span style='color:#ffffff;'>⚔️ Sets (Passo 1)</span>", unsafe_allow_html=True)
+        st.markdown(f"<h4 class='titulo-passo-admin'>• SETS (Passo 1)</h4>", unsafe_allow_html=True)
         s1_in = st.number_input(f"Sets - {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
         s2_in = st.number_input(f"Sets - {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -393,7 +400,8 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
         if not jogo_encerrado:
             st.warning("Definir os Sets para liberar os Tentos.")
         else:
-            st.markdown(f"#### <span style='color:#ffffff;'>🪙 Tentos (Passo 2)</span>", unsafe_allow_html=True)
+            # CORRIGIDO: Removido o logo do emoji que sumia e garantido HTML limpo em Branco
+            st.markdown(f"<h4 class='titulo-passo-admin'>• TENTOS (Passo 2)</h4>", unsafe_allow_html=True)
             
             # CASO 1: Vencedor por 2x0 seco (Jogador 1)
             if s1_in == 2 and s2_in == 0:
@@ -415,7 +423,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
                 st.text_input(f"Digite Tentos - {j1}", value=t1_val_str, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
                 st.text_input(f"Digite Tentos - {j2}", value=t2_val_str, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
             
-            st.markdown(f"#### <span style='color:#ffffff;'>🌸 Flores (Passo 3)</span>", unsafe_allow_html=True)
+            st.markdown(f"<h4 class='titulo-passo-admin'>• FLORES (Passo 3)</h4>", unsafe_allow_html=True)
             st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             st.number_input(f"Flores - {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -530,7 +538,6 @@ with aba_arena:
                         m = str(cont)
                         p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                         
-                        # TÍTULO DESTACADO DA MESA EM AMARELO OURO
                         st.markdown(f'<div class="titulo-mesa-destaque">🎰 MESA {m}</div>', unsafe_allow_html=True)
                         
                         if is_admin:
