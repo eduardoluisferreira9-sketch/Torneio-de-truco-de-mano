@@ -97,7 +97,6 @@ st.markdown("""
     .card-quarto { background-color: #113223; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #a0c0b5; }
     .card-flor { background-color: #ff69b4; color: #000 !important; width: 60%; padding: 10px; border-radius: 50px; text-align: center; font-weight: bold; margin-top: 20px; border: 2px solid #fff; }
     
-    /* Box de Auditoria */
     .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
     
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
@@ -111,6 +110,12 @@ st.markdown("""
 # --- FUNÇÃO DE LIMPEZA DE MEMÓRIA (RESET DE CAMPOS) ---
 def limpar_placares_memoria():
     st.session_state.placares_rodada_atual = {}
+    # Incrementa um "sal" na memória para que as chaves antigas do Streamlit deixem de existir completamente
+    if "semente_reset" not in st.session_state:
+        st.session_state.semente_reset = 1
+    else:
+        st.session_state.semente_reset += 1
+        
     chaves_para_remover = [k for k in st.session_state.keys() if k.startswith("dir_s") or k.startswith("dir_t") or k.startswith("dir_f")]
     for k in chaves_para_remover:
         del st.session_state[k]
@@ -145,7 +150,8 @@ def salvar_estado_no_disco():
         "vice_campeao": st.session_state.vice_campeao,
         "terceiro_lugar": st.session_state.terceiro_lugar,
         "quarto_lugar": st.session_state.quarto_lugar,
-        "placares_rodada_atual": st.session_state.placares_rodada_atual
+        "placares_rodada_atual": st.session_state.placares_rodada_atual,
+        "semente_reset": st.session_state.get("semente_reset", 1)
     }
     if st.session_state.classificacao is not None:
         estado["classificacao"] = st.session_state.classificacao.to_dict(orient="index")
@@ -171,6 +177,7 @@ def carregar_estado_do_disco():
             st.session_state.quarto_lugar = estado.get("quarto_lugar", None)
             st.session_state.historico_rodadas = estado.get("historico_rodadas", {})
             st.session_state.placares_rodada_atual = estado.get("placares_rodada_atual", {})
+            st.session_state.semente_reset = estado.get("semente_reset", 1)
             if estado.get("classificacao") is not None:
                 st.session_state.classificacao = pd.DataFrame.from_dict(estado["classificacao"], orient="index")
             if estado.get("hora_inicio_rodada"):
@@ -196,18 +203,17 @@ if "jogadores" not in st.session_state:
     st.session_state.quarto_lugar = None
     st.session_state.historico_rodadas = {}
     st.session_state.placares_rodada_atual = {}
+    st.session_state.semente_reset = 1
 
 carregar_estado_do_disco()
 
-# --- RECALCULADOR MATRIZ DO ZERO (Garante integridade nas edições retroativas) ---
+# --- RECALCULADOR MATRIZ DO ZERO ---
 def reconstruir_classificacao_global():
-    # Zera a tabela base
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
         'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0
     }).set_index('Jogador')
     
-    # Processa rodada por rodada guardada no histórico
     for r_num, mesas in st.session_state.historico_rodadas.items():
         for m_id, dados in mesas.items():
             if dados.get("is_chapeu", False):
@@ -227,13 +233,6 @@ def reconstruir_classificacao_global():
                 
     st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
     salvar_estado_no_disco()
-
-# --- RECALCULADOR EXTRA PARA O MATA-MATA (REI DA FLOR) ---
-def computar_flores_matamata():
-    # Varre a tabela base gerada pelas rodadas
-    df_flores = st.session_state.classificacao['Flores'].copy()
-    # Adiciona as flores das fases eliminatórias processadas
-    return df_flores
 
 # --- LÓGICA DE RODADAS ---
 def gerar_rodada_web():
@@ -278,17 +277,19 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
         st.session_state.placares_rodada_atual[id_m] = [0, 0, 0, 0, 0, 0, False]
     
     st.session_state.hora_inicio_rodada = None
-    st.session_state.cronometro_ativo = False
+    st.session_state.cronorchetro_ativo = False
     salvar_estado_no_disco()
 
 # --- ATUALIZADOR DIRETO ---
 def disparar_atualizacao_placar(m_str, j1, j2):
-    s1 = st.session_state[f"dir_s1_{m_str}"]
-    t1 = st.session_state[f"dir_t1_{m_str}"]
-    f1 = st.session_state[f"dir_f1_{m_str}"]
-    s2 = st.session_state[f"dir_s2_{m_str}"]
-    t2 = st.session_state[f"dir_t2_{m_str}"]
-    f2 = st.session_state[f"dir_f2_{m_str}"]
+    # Puxa o valor usando a semente atual para garantir sincronia completa
+    sem = st.session_state.get("semente_reset", 1)
+    s1 = st.session_state[f"dir_s1_{m_str}_r{sem}"]
+    t1 = st.session_state[f"dir_t1_{m_str}_r{sem}"]
+    f1 = st.session_state[f"dir_f1_{m_str}_r{sem}"]
+    s2 = st.session_state[f"dir_s2_{m_str}_r{sem}"]
+    t2 = st.session_state[f"dir_t2_{m_str}_r{sem}"]
+    f2 = st.session_state[f"dir_f2_{m_str}_r{sem}"]
     st.session_state.placares_rodada_atual[m_str] = [s1, s2, t1, t2, f1, f2, True]
     salvar_estado_no_disco()
 
@@ -341,7 +342,13 @@ with st.sidebar:
         if st.button("⏹️ Pausar Cronômetro"):
             st.session_state.cronometro_ativo = False
             salvar_estado_no_disco(); st.rerun()
-        if st.button("🚨 LIMPAR COMPLETO"):
+        st.markdown("---")
+        if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
+            if os.path.exists(ARQUIVO_GALERIA):
+                os.remove(ARQUIVO_GALERIA)
+            st.success("Galeria de campeões resetada com sucesso!")
+            st.rerun()
+        if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)"):
             if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
             st.session_state.clear(); st.rerun()
 
@@ -392,6 +399,25 @@ with aba_arena:
                     </div>
                 </div>
             """, unsafe_allow_html=True)
+            
+            # Salva na galeria permanentemente se não estiver salva ainda
+            if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
+                novo_registro = {
+                    "Data": datetime.now().strftime("%d/%m/%Y"),
+                    "Torneio": st.session_state.nome_torneio,
+                    "Campeão": st.session_state.campeao,
+                    "Vice": st.session_state.vice_campeao,
+                    "Rei da Flor": f"{rei_flor_nome} ({rei_flor_val})"
+                }
+                lista_g = []
+                if os.path.exists(ARQUIVO_GALERIA):
+                    try:
+                        with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: lista_g = json.load(f)
+                    except Exception: pass
+                lista_g.append(novo_registro)
+                with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
+                    json.dump(lista_g, f, ensure_ascii=False, indent=4)
+                st.success("Campeão imortalizado na galeria!")
         
         else:
             if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
@@ -400,6 +426,8 @@ with aba_arena:
                 if tr.total_seconds() > 0:
                     st.markdown(f'<div class="cronometro-box"><h2>⏱️ TEMPO RESTANTE: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h2></div>', unsafe_allow_html=True)
                 else: st.markdown('<div class="cronometro-box"><h2 style="color:red !important;">⏰ TEMPO ESGOTADO!</h2></div>', unsafe_allow_html=True)
+
+            sem_id = st.session_state.get("semente_reset", 1)
 
             if not st.session_state.em_matamata:
                 st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
@@ -417,20 +445,19 @@ with aba_arena:
                             with c1: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
                             with c2: 
                                 st.write(f"🤠 **{j1}**")
-                                st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
                             with c3:
                                 st.write(f"🤠 **{j2}**")
-                                st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                                st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
                         else: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
                         cont += 1
                 
                 if is_admin:
                     if st.button("🏁 Fechar Rodada e Avançar", type="primary"):
-                        # Salva a rodada atual no Dicionário de Histórico Permanente antes de mudar de fase
                         id_rodada_str = str(st.session_state.rodada_atual)
                         st.session_state.historico_rodadas[id_rodada_str] = {}
                         
@@ -447,10 +474,9 @@ with aba_arena:
                                 }
                                 m_c += 1
                         
-                        # Recalcula do zero usando a nova mecânica segura
                         reconstruir_classificacao_global()
-                        
                         st.session_state.rodada_atual += 1
+                        
                         if st.session_state.rodada_atual <= 5: gerar_rodada_web()
                         else:
                             n_in = len(st.session_state.jogadores)
@@ -476,14 +502,14 @@ with aba_arena:
                         with col1: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
                         with col2:
                             st.write(f"**{j1}**")
-                            st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
                         with col3:
                             st.write(f"**{j2}**")
-                            st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                            st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
                     else: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
 
                 if is_admin:
@@ -491,7 +517,6 @@ with aba_arena:
                         venc, perd = [], []
                         for c in st.session_state.confrontos_mm:
                             p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
-                            # Adiciona as flores computadas no mata-mata direto na tabela global para auditoria do Rei da Flor
                             st.session_state.classificacao.loc[c["j1"], 'Flores'] += p[4]
                             st.session_state.classificacao.loc[c["j2"], 'Flores'] += p[5]
                             
@@ -510,6 +535,7 @@ with aba_arena:
                                 {"id_original": "1", "tipo": "final", "j1": venc[0], "j2": venc[1]},
                                 {"id_original": "2", "tipo": "3place", "j1": perd[0], "j2": perd[1]}
                             ]
+                            # Força o dicionário de chaves a vir limpo para as finais
                             st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
                         salvar_estado_no_disco(); st.rerun()
 
@@ -520,7 +546,6 @@ with aba_tabela:
         df_r = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
         st.table(df_r)
         
-        # 🔍 SEÇÃO DE CORREÇÃO DE ERROS RETROATIVOS (EXCLUSIVO OPERADOR)
         if st.session_state.historico_rodadas:
             st.markdown("---")
             st.markdown("<div class='box-auditoria'>", unsafe_allow_html=True)
@@ -542,7 +567,6 @@ with aba_tabela:
                         st.markdown(f"**Mesa {m_id}: {j1} VS {j2}**")
                         
                         if is_admin:
-                            # Se for o operador master, abre os campos numéricos para alteração imediata
                             col_e1, col_e2 = st.columns(2)
                             with col_e1:
                                 st.write(f"🥇 Controles {j1}")
@@ -555,15 +579,23 @@ with aba_tabela:
                                 st.number_input(f"Tentos ({j2})", 0, 72, int(dados["t2"]), key=f"ret_t2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                                 st.number_input(f"Flores ({j2})", 0, 20, int(dados["f2"]), key=f"ret_f2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                         else:
-                            # Se for visitante/telão, apenas visualiza o relatório fixo
                             st.markdown(f"👉 **Placar Registrado:** {dados['s1']}s {dados['t1']}t (🌸{dados['f1']}fl)  **VS** {dados['s2']}s {dados['t2']}t (🌸{dados['f2']}fl)")
                         st.markdown("---")
             st.markdown("</div>", unsafe_allow_html=True)
 
-# --- ABA 3: HISTÓRICO ---
+# --- ABA 3: HISTÓRICO DE CAMPEÕES ---
 with aba_historico:
+    st.markdown("### 📜 Galeria Tradicionalista de Campeões")
     if os.path.exists(ARQUIVO_GALERIA):
-        with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
-        if dg: st.table(pd.DataFrame(dg))
+        try:
+            with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
+            if dg: 
+                st.table(pd.DataFrame(dg))
+            else:
+                st.info("A galeria está vazia por enquanto.")
+        except Exception: 
+            st.info("A galeria está vazia por enquanto.")
+    else:
+        st.info("Nenhum torneio foi imortalizado nesta galeria ainda.")
 
 st.markdown(f'<div class="creditos">💻 {NOME_CRIADOR} © 2026</div>', unsafe_allow_html=True)
