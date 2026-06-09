@@ -64,7 +64,6 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Box customizado para o aviso do Chapéu */
     .chapeu-box {
         background-color: #113223;
         border: 2px dashed #d4af37;
@@ -258,7 +257,7 @@ def dialog_entrada_placares(mesa_id_string, j1, j2):
                 salvar_estado_no_disco()
                 st.rerun()
 
-# --- HTML/CSS PLANTA BAIXA DA MESA (Ajustada para fechar perfeitamente embaixo) ---
+# --- HTML/CSS PLANTA BAIXA DA MESA ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
     <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); height: 410px; box-sizing: border-box; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 5px;">
@@ -296,7 +295,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
 # 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnica")
+    st.markdown("## ⚙️ Gestão Técnico")
     senha_inserida = st.text_input("Chave Master:", type="password")
     is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
     
@@ -331,7 +330,8 @@ with st.sidebar:
 # -------------------------------------------------------------------------
 # 🏛️ INTERFACE E ABAS DO TELÃO CENTRAL
 # -------------------------------------------------------------------------
-st.markdown(f"<h1 style='text-align:center;'>🏆 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
+# 🃏 MODIFICAÇÃO: Trocado o troféu (🏆) pelo baralho (🃏) no cabeçalho central
+st.markdown(f"<h1 style='text-align:center;'>🃏 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
 
 aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
 
@@ -381,7 +381,6 @@ with aba_arena:
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
             
-            # 🤠 AJUSTE: Caixa de Chapéu com Altíssima Visibilidade (Fundo Verde e Letras Douradas/Brancas)
             for j1, j2 in st.session_state.confrontos:
                 if j2 == "CHAPÉU (Folga)":
                     st.markdown(f"""
