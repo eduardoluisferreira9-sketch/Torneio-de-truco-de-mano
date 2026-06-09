@@ -238,6 +238,8 @@ def carregar_estado_do_disco():
             st.session_state.historico_rodadas = estado.get("historico_rodadas", {})
             st.session_state.placares_rodada_atual = estado.get("placares_rodada_atual", {})
             st.session_state.semente_reset = estado.get("semente_reset", 1)
+            if estado.get("nome_torneio"):
+                st.session_state.nome_torneio = estado.get("nome_torneio")
             if estado.get("classificacao") is not None:
                 st.session_state.classificacao = pd.DataFrame.from_dict(estado["classificacao"], orient="index")
             if estado.get("hora_inicio_rodada"):
@@ -264,6 +266,7 @@ if "jogadores" not in st.session_state:
     st.session_state.historico_rodadas = {}
     st.session_state.placares_rodada_atual = {}
     st.session_state.semente_reset = 1
+    st.session_state.nome_torneio = "Torneio de Truco"
 
 carregar_estado_do_disco()
 
@@ -506,7 +509,7 @@ with aba_arena:
             rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
-            # CONSTRUÇÃO DO IFRAME ISOLADO COM COMPONENTS.HTML (BLINDAGEM CONTRA BUG DO ST.MARKDOWN)
+            # CONSTRUÇÃO DO IFRAME ISOLADO COM COMPONENTS.HTML
             html_iframe_podio = f"""
             <div style="background-color: #0d231a; padding: 10px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; box-sizing: border-box;">
                 
@@ -533,7 +536,7 @@ with aba_arena:
                 
                 <div style="display: flex; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 10px auto;">
                     <div style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0px 8px 20px rgba(0,0,0,0.5);">
-                        <h5 style="margin:0; color:#d4af37; font-weight:bold; font-size: 0.85rem; text-transform: uppercase;">🏅 Finalista Extraordinário (4º)</h5>
+                        <h5 style="margin:0; color:#d4af37; font-weight:bold; font-size: 0.85rem; text-transform: uppercase;">🏅 4º Colocado</h5>
                         <h3 style="margin:8px 0 0 0; font-weight:900; font-size:1.3rem; color:#ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {fourth}</h3>
                     </div>
                     
@@ -547,13 +550,12 @@ with aba_arena:
             </div>
             """
             
-            # Execução pelo Componente HTML puro, que força isolamento absoluto de layout
             components.html(html_iframe_podio, height=520, scrolling=False)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
                 novo_registro = {
                     "Data": datetime.now().strftime("%d/%m/%Y"),
-                    "Torneio": st.session_state.nome_torneio,
+                    "Torneio": st.session_state.get("nome_torneio", "Torneio de Truco"),
                     "Campeao": st.session_state.campeao,
                     "Vice": st.session_state.vice_campeao,
                     "ReiDaFlor": f"{rei_flor_nome} ({rei_flor_val} fl.)"
