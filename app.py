@@ -556,8 +556,10 @@ with aba_arena:
                 novo_registro = {
                     "Data": datetime.now().strftime("%d/%m/%Y"),
                     "Torneio": st.session_state.get("nome_torneio", "Torneio de Truco"),
-                    "Campeao": st.session_state.campeao,
-                    "Vice": st.session_state.vice_campeao,
+                    "Campeao": champ,
+                    "Vice": vice,
+                    "Terceiro": third,
+                    "Quarto": fourth,
                     "ReiDaFlor": f"{rei_flor_nome} ({rei_flor_val} fl.)"
                 }
                 lista_g = []
@@ -568,7 +570,7 @@ with aba_arena:
                 lista_g.append(novo_registro)
                 with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
                     json.dump(lista_g, f, ensure_ascii=False, indent=4)
-                st.success("Campeões imortalizados com sucesso na galeria histórica!")
+                st.success("Os 4 melhores colocados foram imortalizados com sucesso na galeria histórica!")
         
         else:
             if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
@@ -785,7 +787,8 @@ with aba_historico:
                             <div class="galeria-corpo">
                                 <div class="galeria-linha-campeao">🥇 Grande Campeão: <span class="galeria-ouro">{registro.get('Campeao', 'N/A')}</span></div>
                                 <div class="galeria-linha-secundaria">🥈 Vice-Campeão: {registro.get('Vice', 'N/A')}</div>
-                                <div class="galeria-linha-secundaria">🌸 Rei da Flor: {registro.get('ReiDaFlor', 'N/A')}</div>
+                                <div class="galeria-linha-secundaria">🥉 3º Colocado: {registro.get('Terceiro', 'N/A')} &nbsp;|&nbsp; 🏅 4º Colocado: {registro.get('Quarto', 'N/A')}</div>
+                                <div class="galeria-linha-secundaria" style="margin-top: 5px; color: #ff69b4 !important;">🌸 Rei da Flor: {registro.get('ReiDaFlor', 'N/A')}</div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
