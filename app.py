@@ -4,7 +4,6 @@ import pandas as pd
 import random
 import json
 import os
-import qrcode
 import socket
 import requests 
 from PIL import Image 
@@ -110,7 +109,6 @@ st.markdown("""
 # --- FUNÇÃO DE LIMPEZA DE MEMÓRIA (RESET DE CAMPOS) ---
 def limpar_placares_memoria():
     st.session_state.placares_rodada_atual = {}
-    # Incrementa um "sal" na memória para que as chaves antigas do Streamlit deixem de existir completamente
     if "semente_reset" not in st.session_state:
         st.session_state.semente_reset = 1
     else:
@@ -207,7 +205,7 @@ if "jogadores" not in st.session_state:
 
 carregar_estado_do_disco()
 
-# --- RECALCULADOR MATRIZ DO ZERO ---
+# --- RECALCULADOR MATRIZ ---
 def reconstruir_classificacao_global():
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
@@ -277,23 +275,38 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
         st.session_state.placares_rodada_atual[id_m] = [0, 0, 0, 0, 0, 0, False]
     
     st.session_state.hora_inicio_rodada = None
-    st.session_state.cronorchetro_ativo = False
+    st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- ATUALIZADOR DIRETO ---
+# --- PROCESSADOR DIRETO DAS REGRAS ---
 def disparar_atualizacao_placar(m_str, j1, j2):
-    # Puxa o valor usando a semente atual para garantir sincronia completa
     sem = st.session_state.get("semente_reset", 1)
     s1 = st.session_state[f"dir_s1_{m_str}_r{sem}"]
-    t1 = st.session_state[f"dir_t1_{m_str}_r{sem}"]
-    f1 = st.session_state[f"dir_f1_{m_str}_r{sem}"]
     s2 = st.session_state[f"dir_s2_{m_str}_r{sem}"]
-    t2 = st.session_state[f"dir_t2_{m_str}_r{sem}"]
-    f2 = st.session_state[f"dir_f2_{m_str}_r{sem}"]
+    
+    # Valores padrões antigos ou digitados
+    p_antigo = st.session_state.placares_rodada_atual.get(m_str, [0, 0, 0, 0, 0, 0, False])
+    
+    # Se os sets mudaram, recalcula a dependência dos tentos
+    if s1 == 2 and s2 == 0:
+        t1 = 72
+        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}", p_antigo[3])
+        if t2 > 46: t2 = 46
+    elif s2 == 2 and s1 == 0:
+        t2 = 72
+        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}", p_antigo[2])
+        if t1 > 46: t1 = 46
+    else:
+        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}", p_antigo[2])
+        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}", p_antigo[3])
+
+    f1 = st.session_state.get(f"dir_f1_{m_str}_r{sem}", p_antigo[4])
+    f2 = st.session_state.get(f"dir_f2_{m_str}_r{sem}", p_antigo[5])
+    
     st.session_state.placares_rodada_atual[m_str] = [s1, s2, t1, t2, f1, f2, True]
     salvar_estado_no_disco()
 
-# --- CALLBACK PARA EDICAO RETROATIVA DE HISTÓRICO ---
+# --- CALLBACK PARA EDICAO RETROATIVA ---
 def salvar_mudanca_retroativa(r_alvo, m_id, j1, j2):
     st.session_state.historico_rodadas[r_alvo][m_id]["s1"] = st.session_state[f"ret_s1_{r_alvo}_{m_id}"]
     st.session_state.historico_rodadas[r_alvo][m_id]["t1"] = st.session_state[f"ret_t1_{r_alvo}_{m_id}"]
@@ -329,6 +342,47 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     """
     components.html(html_mesa, height=425, scrolling=False)
 
+# --- AUXILIAR DE PREENCHIMENTO INTELIGENTE DE MESA ---
+def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
+    p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
+    s1, s2, t1, t2, f1, f2 = p[0], p[1], p[2], p[3], p[4], p[5]
+    
+    c1, c2 = st.columns([1, 1])
+    
+    with c1:
+        st.markdown(f"### ⚔️ Sets (Passo 1)")
+        s1_in = st.number_input(f"Sets - {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+        s2_in = st.number_input(f"Sets - {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+
+    # Valida se os sets digitados formam um final de jogo válido (alguém bateu 2)
+    jogo_encerrado = (s1_in == 2 or s2_in == 2)
+    
+    with c2:
+        if not jogo_encerrado:
+            st.warning("⚠️ Aguardando a definição dos Sets para liberar Tentos e Flores.")
+        else:
+            st.markdown("### 🪙 Tentos (Passo 2)")
+            # Regra 2x0 J1
+            if s1_in == 2 and s2_in == 0:
+                st.info(f"💡 {j1} venceu por 2x0. Tentos travados em 72.")
+                st.number_input(f"Tentos - {j1}", 72, 72, 72, key=f"dir_t1_{m}_r{sem_id}", disabled=True)
+                st.number_input(f"Tentos - {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+            
+            # Regra 2x0 J2
+            elif s2_in == 2 and s1_in == 0:
+                st.number_input(f"Tentos - {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                st.info(f"💡 {j2} venceu por 2x0. Tentos travados em 72.")
+                st.number_input(f"Tentos - {j2}", 72, 72, 72, key=f"dir_t2_{m}_r{sem_id}", disabled=True)
+                
+            # Regras normais (2x1)
+            else:
+                st.number_input(f"Tentos - {j1}", 0, 72, int(t1), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                st.number_input(f"Tentos - {j2}", 0, 72, int(t2), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+            
+            st.markdown("### 🌸 Flores (Passo 3)")
+            st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+            st.number_input(f"Flores - {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.markdown("## ⚙️ Gestão Técnica")
@@ -344,8 +398,7 @@ with st.sidebar:
             salvar_estado_no_disco(); st.rerun()
         st.markdown("---")
         if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
-            if os.path.exists(ARQUIVO_GALERIA):
-                os.remove(ARQUIVO_GALERIA)
+            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUIVO_GALERIA)
             st.success("Galeria de campeões resetada com sucesso!")
             st.rerun()
         if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)"):
@@ -400,7 +453,6 @@ with aba_arena:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Salva na galeria permanentemente se não estiver salva ainda
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
                 novo_registro = {
                     "Data": datetime.now().strftime("%d/%m/%Y"),
@@ -440,50 +492,67 @@ with aba_arena:
                     if j2 != "CHAPÉU (Folga)":
                         m = str(cont)
                         p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
+                        
+                        st.markdown(f"---")
                         if is_admin:
-                            c1, c2, c3 = st.columns([3,1,1])
-                            with c1: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                            with c2: 
-                                st.write(f"🤠 **{j1}**")
-                                st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            with c3:
-                                st.write(f"🤠 **{j2}**")
-                                st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                                st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                        else: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
+                            col_painel, col_entradas = st.columns([2, 3])
+                            with col_painel: 
+                                desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
+                            with col_entradas: 
+                                renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
+                        else: 
+                            desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
                         cont += 1
                 
                 if is_admin:
-                    if st.button("🏁 Fechar Rodada e Avançar", type="primary"):
-                        id_rodada_str = str(st.session_state.rodada_atual)
-                        st.session_state.historico_rodadas[id_rodada_str] = {}
-                        
+                    st.markdown("### 🏁 Finalizar Etapa")
+                    if st.button("Fechar Rodada e Avançar", type="primary"):
+                        erro_validacao = False
                         m_c = 1
                         for j1, j2 in st.session_state.confrontos:
-                            if j2 == "CHAPÉU (Folga)":
-                                st.session_state.historico_rodadas[id_rodada_str][f"chapeu_{j1}"] = {
-                                    "is_chapeu": True, "j1": j1, "j2": "Folga", "s1": 3, "s2": 0, "t1": 72, "t2": 0, "f1": 0, "f2": 0
-                                }
-                            else:
+                            if j2 != "CHAPÉU (Folga)":
                                 p = st.session_state.placares_rodada_atual.get(str(m_c), [0,0,0,0,0,0,False])
-                                st.session_state.historico_rodadas[id_rodada_str][str(m_c)] = {
-                                    "is_chapeu": False, "j1": j1, "j2": j2, "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]
-                                }
+                                s1, s2, t1, t2 = p[0], p[1], p[2], p[3]
+                                
+                                if not (s1 == 2 or s2 == 2):
+                                    st.error(f"❌ Erro na Mesa {m_c}: Partida inacabada! Alguém precisa ter 2 sets."); erro_validacao = True
+                                
+                                # Verificação do 2x1
+                                if s1 == 2 and s2 == 1:
+                                    if t1 < 48: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 2 Sets ({j1}) precisa ter no mínimo 48 tentos!"); erro_validacao = True
+                                    if t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 1 Set ({j2}) precisa ter no mínimo 24 tentos!"); erro_validacao = True
+                                elif s2 == 2 and s1 == 1:
+                                    if t2 < 48: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 2 Sets ({j2}) precisa ter no mínimo 48 tentos!"); erro_validacao = True
+                                    if t1 < 24: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 1 Set ({j1}) precisa ter no mínimo 24 tentos!"); erro_validacao = True
                                 m_c += 1
-                        
-                        reconstruir_classificacao_global()
-                        st.session_state.rodada_atual += 1
-                        
-                        if st.session_state.rodada_atual <= 5: gerar_rodada_web()
-                        else:
-                            n_in = len(st.session_state.jogadores)
-                            f_n = "OITAVAS" if n_in > 16 else ("QUARTAS" if n_in >= 8 else "SEMIFINAL")
-                            dv = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
-                            iniciar_fase_matamata(list(dv.index[:16 if n_in>16 else (8 if n_in>=8 else 4)]), f_n)
-                        st.rerun()
+                                
+                        if not erro_validacao:
+                            id_rodada_str = str(st.session_state.rodada_atual)
+                            st.session_state.historico_rodadas[id_rodada_str] = {}
+                            
+                            m_c = 1
+                            for j1, j2 in st.session_state.confrontos:
+                                if j2 == "CHAPÉU (Folga)":
+                                    st.session_state.historico_rodadas[id_rodada_str][f"chapeu_{j1}"] = {
+                                        "is_chapeu": True, "j1": j1, "j2": "Folga", "s1": 3, "s2": 0, "t1": 72, "t2": 0, "f1": 0, "f2": 0
+                                    }
+                                else:
+                                    p = st.session_state.placares_rodada_atual.get(str(m_c), [0,0,0,0,0,0,False])
+                                    st.session_state.historico_rodadas[id_rodada_str][str(m_c)] = {
+                                        "is_chapeu": False, "j1": j1, "j2": j2, "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]
+                                    }
+                                    m_c += 1
+                            
+                            reconstruir_classificacao_global()
+                            st.session_state.rodada_atual += 1
+                            
+                            if st.session_state.rodada_atual <= 5: gerar_rodada_web()
+                            else:
+                                n_in = len(st.session_state.jogadores)
+                                f_n = "OITAVAS" if n_in > 16 else ("QUARTAS" if n_in >= 8 else "SEMIFINAL")
+                                dv = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
+                                iniciar_fase_matamata(list(dv.index[:16 if n_in>16 else (8 if n_in>=8 else 4)]), f_n)
+                            st.rerun()
 
             else:
                 st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
@@ -496,48 +565,51 @@ with aba_arena:
                     j1, j2 = c["j1"], c["j2"]
                     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                     tit = "🥇 GRANDE FINAL" if c["tipo"]=="final" else ("🥉 DISPUTA 3º LUGAR" if c["tipo"]=="3place" else f"MESA {m}")
-                    st.write(f"**{tit}**")
+                    
+                    st.markdown(f"#### {tit}")
                     if is_admin:
-                        col1, col2, col3 = st.columns([3,1,1])
-                        with col1: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                        with col2:
-                            st.write(f"**{j1}**")
-                            st.number_input("S", 0, 2, int(p[0]), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("T", 0, 72, int(p[2]), key=f"dir_t1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("F", 0, 20, int(p[4]), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                        with col3:
-                            st.write(f"**{j2}**")
-                            st.number_input("S", 0, 2, int(p[1]), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("T", 0, 72, int(p[3]), key=f"dir_t2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                            st.number_input("F", 0, 20, int(p[5]), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                    else: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
+                        col_p_mm, col_e_mm = st.columns([2, 3])
+                        with col_p_mm: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
+                        with col_e_mm: renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
+                    else: 
+                        desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
 
                 if is_admin:
+                    st.markdown("---")
                     if st.button("🏆 Confirmar Fase e Avançar", type="primary"):
-                        venc, perd = [], []
+                        erro_mm = False
                         for c in st.session_state.confrontos_mm:
                             p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
-                            st.session_state.classificacao.loc[c["j1"], 'Flores'] += p[4]
-                            st.session_state.classificacao.loc[c["j2"], 'Flores'] += p[5]
-                            
-                            w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
-                            if c["tipo"]=="normal": venc.append(w); perd.append(l)
-                            elif c["tipo"]=="final": st.session_state.campeao=w; st.session_state.vice_campeao=l
-                            elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
+                            s1, s2, t1, t2 = p[0], p[1], p[2], p[3]
+                            if not (s1 == 2 or s2 == 2):
+                                st.error(f"❌ Partida inacabada na mesa {c['id_original']}!"); erro_mm = True
+                            if (s1 == 2 and s2 == 1 and (t1 < 48 or t2 < 24)) or (s2 == 2 and s1 == 1 and (t2 < 48 or t1 < 24)):
+                                st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos exigidos para o placar 2x1 (48 e 24 tentos)."); erro_mm = True
+                        
+                        if not erro_mm:
+                            venc, perd = [], []
+                            for c in st.session_state.confrontos_mm:
+                                p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
+                                st.session_state.classificacao.loc[c["j1"], 'Flores'] += p[4]
+                                st.session_state.classificacao.loc[c["j2"], 'Flores'] += p[5]
+                                
+                                w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
+                                if c["tipo"]=="normal": venc.append(w); perd.append(l)
+                                elif c["tipo"]=="final": st.session_state.campeao=w; st.session_state.vice_campeao=l
+                                elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
 
-                        f_at = st.session_state.fase_matamata
-                        if f_at == "OITAVAS": iniciar_fase_matamata(venc, "QUARTAS")
-                        elif f_at == "QUARTAS": iniciar_fase_matamata(venc, "SEMIFINAL")
-                        elif f_at == "SEMIFINAL":
-                            limpar_placares_memoria()
-                            st.session_state.fase_matamata = "FINAL E TERCEIRO"
-                            st.session_state.confrontos_mm = [
-                                {"id_original": "1", "tipo": "final", "j1": venc[0], "j2": venc[1]},
-                                {"id_original": "2", "tipo": "3place", "j1": perd[0], "j2": perd[1]}
-                            ]
-                            # Força o dicionário de chaves a vir limpo para as finais
-                            st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
-                        salvar_estado_no_disco(); st.rerun()
+                            f_at = st.session_state.fase_matamata
+                            if f_at == "OITAVAS": iniciar_fase_matamata(venc, "QUARTAS")
+                            elif f_at == "QUARTAS": iniciar_fase_matamata(venc, "SEMIFINAL")
+                            elif f_at == "SEMIFINAL":
+                                limpar_placares_memoria()
+                                st.session_state.fase_matamata = "FINAL E TERCEIRO"
+                                st.session_state.confrontos_mm = [
+                                    {"id_original": "1", "tipo": "final", "j1": venc[0], "j2": venc[1]},
+                                    {"id_original": "2", "tipo": "3place", "j1": perd[0], "j2": perd[1]}
+                                ]
+                                st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
+                            salvar_estado_no_disco(); st.rerun()
 
 # --- ABA 2: CLASSIFICAÇÃO GERAL E HISTÓRICO RETROATIVO ---
 with aba_tabela:
@@ -550,15 +622,12 @@ with aba_tabela:
             st.markdown("---")
             st.markdown("<div class='box-auditoria'>", unsafe_allow_html=True)
             st.markdown("### 🔍 Auditoria e Correção de Rodadas Passadas")
-            st.write("Selecione uma rodada concluída para revisar ou alterar valores digitados incorretamente:")
             
             rodadas_concluidas = list(st.session_state.historico_rodadas.keys())
             r_selecionada = st.selectbox("Escolha a Rodada:", rodadas_concluidas)
             
             if r_selecionada:
-                st.info(f"Exibindo confrontos salvos da **Rodada {r_selecionada}**")
                 mesas_salvas = st.session_state.historico_rodadas[r_selecionada]
-                
                 for m_id, dados in mesas_salvas.items():
                     if dados.get("is_chapeu", False):
                         st.warning(f"🎩 **Jogador no Chapéu:** {dados['j1']} ganhou folga automática (+1V, 3S, 72T).")
@@ -589,13 +658,9 @@ with aba_historico:
     if os.path.exists(ARQUIVO_GALERIA):
         try:
             with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
-            if dg: 
-                st.table(pd.DataFrame(dg))
-            else:
-                st.info("A galeria está vazia por enquanto.")
-        except Exception: 
-            st.info("A galeria está vazia por enquanto.")
-    else:
-        st.info("Nenhum torneio foi imortalizado nesta galeria ainda.")
+            if dg: st.table(pd.DataFrame(dg))
+            else: st.info("A galeria está vazia por enquanto.")
+        except Exception: st.info("A galeria está vazia por enquanto.")
+    else: st.info("Nenhum torneio foi imortalizado nesta galeria ainda.")
 
 st.markdown(f'<div class="creditos">💻 {NOME_CRIADOR} © 2026</div>', unsafe_allow_html=True)
