@@ -108,7 +108,7 @@ st.markdown("""
     }
     
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
-    .box-pódio { background-color: #113223; border: 2px solid #d4af37; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
+    .box-podio { background-color: #113223; border: 2px solid #d4af37; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
 
     /* 📊 FORÇAR DIVISÓRIAS BRANCAS DE ALTO CONTRASTE NO ST.TABLE */
@@ -277,8 +277,7 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.confrontos_mm = []
     st.session_state.placares_rodada_atual = {}
     
-    if nome_fase in ["TERCEIRO_E_FINAL", "FINAL"]:
-        # Estrutura tratada individualmente na consolidação da semifinal
+    if nome_fase in ["FINAL E TERCEIRO"]:
         return
         
     n = len(lista_jogadores)
@@ -357,7 +356,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
 # 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnica")
+    st.markdown("## ⚙️ Gestão Técnico")
     senha_inserida = st.text_input("Chave Master:", type="password")
     is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
     
@@ -431,7 +430,7 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown(f'<div class="box-campeao"><h1>🥇 CAMPEÃO: {st.session_state.campeao}</h1></div>', unsafe_allow_html=True)
             st.markdown(f"""
-                <div class="box-pódio">
+                <div class="box-podio">
                     <h3>🥈 VICE-CAMPEÃO: {st.session_state.vice_campeao}</h3>
                     <h4>🥉 3º LUGAR: {st.session_state.terceiro_lugar} | 🏅 4º LUGAR: {st.session_state.quarto_lugar}</h4>
                 </div>
@@ -445,8 +444,8 @@ with aba_arena:
                 p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                 
                 label_mesa = f"MESA {m_str} - {st.session_state.fase_matamata}"
-                if c["tipo"] == "3place": label_mesa = "🥉 DISPUTA DE TERCEIRO LUGAR"
-                if c["tipo"] == "final": label_mesa = "🥇 GRANDE FINAL"
+                if c["tipo"] == "final": label_mesa = "👑 MESA 1: GRANDE FINAL (MAIOR ÊNFASE)"
+                if c["tipo"] == "3place": label_mesa = "🥉 MESA 2: DISPUTA DE TERCEIRO LUGAR"
                 
                 st.write(f"**{label_mesa}**")
                 desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
@@ -480,11 +479,10 @@ with aba_arena:
                             dialog_entrada_placares(m_str, j1, j2)
                     contador_real_mesa += 1
             
-        # 🚨 SEÇÃO DO BOTÃO DE FECHAMENTO (CORRIGIDA: FORA DOS ESCREVES EXCLUSIVOS DA CLASSIFICATÓRIA)
+        # 🚨 SEÇÃO DO BOTÃO DE FECHAMENTO
         if is_admin and not st.session_state.campeao:
             st.markdown("---")
             if not st.session_state.em_matamata:
-                # Botão Clássico da Fase Classificatória
                 if st.button("🏁 Fechar e Salvar Rodada Atual", type="primary"):
                     contador_consolidacao = 1
                     for j1, j2 in st.session_state.confrontos:
@@ -511,17 +509,15 @@ with aba_arena:
                         iniciar_fase_matamata(list(df_v.index[:16 if n_insc > 16 else (8 if n_insc >= 8 else 4)]), f_nome)
                     st.rerun()
             else:
-                # ⚔️ NOVO: Botão Dinâmico de Avanço Exclusivo para as Eliminatórias
                 if st.button("🏆 Consolidar Eliminatória e Avançar", type="primary"):
                     vencedores = []
                     perdedores = []
                     
-                    # Analisar quem ganhou cada mesa do Mata-Mata atual
+                    # Processar os resultados da rodada mata-mata corrente
                     for idx, c in enumerate(st.session_state.confrontos_mm):
                         m_str = str(idx + 1)
                         p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                         
-                        # Se não jogaram, assume vitória do Jogador 1 para não travar o script
                         if p[0] >= p[1]:
                             win, los = c["j1"], c["j2"]
                         else:
@@ -530,14 +526,15 @@ with aba_arena:
                         if c["tipo"] == "normal":
                             vencedores.append(win)
                             perdedores.append(los)
-                        elif c["tipo"] == "3place":
-                            st.session_state.terceiro_lugar = win
-                            st.session_state.quarto_lugar = los
                         elif c["tipo"] == "final":
+                            # Processa Mesa 1 (Final)
                             st.session_state.campeao = win
                             st.session_state.vice_campeao = los
+                        elif c["tipo"] == "3place":
+                            # Processa Mesa 2 (Disputa de 3º)
+                            st.session_state.terceiro_lugar = win
+                            st.session_state.quarto_lugar = los
                     
-                    # Controlar o fluxo das próximas fases
                     fase_atual = st.session_state.fase_matamata
                     st.session_state.placares_rodada_atual = {}
                     
@@ -546,16 +543,15 @@ with aba_arena:
                     elif fase_atual == "QUARTAS":
                         iniciar_fase_matamata(vencedores, "SEMIFINAL")
                     elif fase_atual == "SEMIFINAL":
-                        # Na Semifinal, geramos a estrutura casada (Disputa de 3º na Mesa 1, Final na Mesa 2)
+                        # 🏛️ INVERSÃO PROJETADA: Agora a Final fica no topo (Mesa 1) e o Terceiro fica abaixo (Mesa 2)
                         st.session_state.fase_matamata = "FINAL E TERCEIRO"
                         st.session_state.confrontos_mm = [
-                            {"tipo": "3place", "j1": perdedores[0], "j2": perdedores[1]},
-                            {"tipo": "final", "j1": vencedores[0], "j2": vencedores[1]}
+                            {"tipo": "final", "j1": vencedores[0], "j2": vencedores[1]},
+                            {"tipo": "3place", "j1": perdedores[0], "j2": perdedores[1]}
                         ]
-                        st.session_state.placares_rodada_atual["1"] = [0,0,0,0,0,0,False]
-                        st.session_state.placares_rodada_atual["2"] = [0,0,0,0,0,0,False]
+                        st.session_state.placares_rodada_atual["1"] = [0,0,0,0,0,0,False] # Mesa 1 - Final
+                        st.session_state.placares_rodada_atual["2"] = [0,0,0,0,0,0,False] # Mesa 2 - 3º Lugar
                     elif fase_atual == "FINAL E TERCEIRO":
-                        # Gravar na galeria histórico geral se existirem os dados
                         if st.session_state.campeao:
                             registro = {
                                 "Data": datetime.now().strftime("%d/%m/%Y"),
