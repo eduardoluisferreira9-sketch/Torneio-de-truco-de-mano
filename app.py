@@ -6,13 +6,29 @@ import json
 import os
 import qrcode
 import socket
+import requests # 🌐 Nova importação para buscar a imagem na web
+from PIL import Image # 🖼️ Nova importação para tratar o ícone
 from io import BytesIO
 from datetime import datetime, timedelta
 
-# 🃏 CONFIGURAÇÃO DA PÁGINA
+# ==========================================
+# 🖼️ BANCO DE DADOS DE IMAGENS VIA INTERNET
+# ==========================================
+URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
+
+# Tentativa de carregar a imagem do Baralho Espanhol para o Ícone da Página
+icone_pagina = "🃏" # Emoji de backup caso a internet falhe ou o link mude
+try:
+    resposta = requests.get(f"{URL_BASE_IMAGENS}/baralho_espanhol.png", timeout=5)
+    if resposta.status_code == 200:
+        icone_pagina = Image.open(BytesIO(resposta.content))
+except Exception:
+    pass
+
+# 🃏 CONFIGURAÇÃO DA PÁGINA (Agora usando a imagem da biblioteca)
 st.set_page_config(
     page_title="Central de Torneios de Truco - Planta Baixa",
-    page_icon="🃏",
+    page_icon=icone_pagina,
     layout="wide"
 )
 
@@ -21,27 +37,43 @@ ARQUIVO_BACKUP = "torneio_atual_pb.json"
 ARQUIVO_GALERIA = "galeria_campeoes.json"
 CHAVE_ADMINISTRADOR = "truco123"
 
-# ==========================================
-# 🖼️ BANCO DE DADOS DE IMAGENS VIA INTERNET
-# ==========================================
-URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
-
 # 🛠️ ESTILIZAÇÃO CSS
 st.markdown("""
     <style>
+    /* Fundo Geral */
     .stApp { background-color: #0d231a; } 
     
+    /* Barra Lateral */
     section[data-testid="stSidebar"] {
         background-color: #07140f;
         border-right: 2px solid #1c4234;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
-    h1, h2, h3, .texto-branco { color: #ffffff !important; }
+    /* Textos, Títulos e Labels Principais em Branco de Alto Contraste */
+    h1, h2, h3, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
+        color: #ffffff !important; 
+    }
     
+    /* Customização dos Inputs (Campos de Texto) no Painel Principal */
+    div[data-testid="stTextInput"] input {
+        color: #ffffff !important;
+        background-color: #07140f !important;
+        border: 1px solid #1c4234 !important;
+    }
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #d4af37 !important;
+    }
+    div[data-testid="stTextInput"] label {
+        color: #d4af37 !important;
+        font-weight: bold !important;
+    }
+    
+    /* Abas */
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
 
+    /* Correção do Pop-up de Lançamento (Dialog) */
     div[data-testid="stDialog"] label, 
     div[data-testid="stDialog"] p,
     div[data-testid="stDialog"] span { 
@@ -52,12 +84,14 @@ st.markdown("""
         background-color: #ffffff !important;
     }
     
+    /* Botões Padrão */
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
         border: 1px solid #aa8312 !important;
     }
     
+    /* Elementos de Layout */
     .cronometro-box { 
         background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
@@ -295,7 +329,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
 # 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnico")
+    st.markdown("## ⚙️ Gestão Técnica")
     senha_inserida = st.text_input("Chave Master:", type="password")
     is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
     
@@ -330,7 +364,6 @@ with st.sidebar:
 # -------------------------------------------------------------------------
 # 🏛️ INTERFACE E ABAS DO TELÃO CENTRAL
 # -------------------------------------------------------------------------
-# 🃏 MODIFICAÇÃO: Trocado o troféu (🏆) pelo baralho (🃏) no cabeçalho central
 st.markdown(f"<h1 style='text-align:center;'>🃏 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
 
 aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
@@ -348,7 +381,10 @@ with aba_arena:
                     if nj_clean not in st.session_state.jogadores and nj_clean != "":
                         st.session_state.jogadores.append(nj_clean)
                         salvar_estado_no_disco(); st.rerun()
-        st.write(f"**Inscritos ({len(st.session_state.jogadores)}):** {', '.join(st.session_state.jogadores)}")
+        
+        st.write(f"**Inscritos ({len(st.session_state.jogadores)}):**")
+        st.info(", ".join(st.session_state.jogadores) if st.session_state.jogadores else "Nenhum competidor cadastrado ainda.")
+        
         if is_admin and len(st.session_state.jogadores) >= 4:
             if st.button("🃏 DISPARAR TORNEIO OFICIAL"):
                 st.session_state.nome_torneio = nome_torneio
