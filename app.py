@@ -56,23 +56,20 @@ st.markdown("""
         background-color: #07140f !important;
         border: 1px solid #1c4234 !important;
     }
-    div[data-testid="stTextInput"] input:focus {
-        border-color: #d4af37 !important;
-    }
-    div[data-testid="stTextInput"] label {
-        color: #d4af37 !important;
-        font-weight: bold !important;
-    }
     
-    /* Customização dos Number Inputs na Área de Lançamento Direto */
+    /* Inputs compactos para o Placar Direto */
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
-        background-color: #113223 !important;
+        background-color: #07140f !important;
         border: 1px solid #d4af37 !important;
         text-align: center !important;
+        font-weight: bold !important;
+        font-size: 1.1rem !important;
+        height: 35px !important;
     }
     div[data-testid="stNumberInput"] label {
         color: #a0c0b5 !important;
+        font-size: 0.8rem !important;
     }
     
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
@@ -280,32 +277,19 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- BLOCÃO DE ENTRADA DIRETO NA MESA (PAINEL DO OPERADOR) ---
-def renderizar_painel_lancamento_direto(m_str, j1, j2):
-    valores_salvos = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
+# --- ATUALIZADOR DIRETO VIA EVENTO (SEM BOTÃO DE SALVAR) ---
+def disparar_atualizacao_placar(m_str, j1, j2):
+    s1 = st.session_state[f"dir_s1_{m_str}"]
+    t1 = st.session_state[f"dir_t1_{m_str}"]
+    f1 = st.session_state[f"dir_f1_{m_str}"]
+    s2 = st.session_state[f"dir_s2_{m_str}"]
+    t2 = st.session_state[f"dir_t2_{m_str}"]
+    f2 = st.session_state[f"dir_f2_{m_str}"]
     
-    with st.expander(f"🛠️ Lançamento Rápido - Mesa {m_str}", expanded=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"**{j1}**")
-            s1 = st.number_input("Sets", 0, 2, int(valores_salvos[0]), key=f"dir_s1_{m_str}")
-            t1 = st.number_input("Tentos", 0, 72, int(valores_salvos[2]), key=f"dir_t1_{m_str}")
-            f1 = st.number_input("Flores", 0, 20, int(valores_salvos[4]), key=f"dir_f1_{m_str}")
-        with col2:
-            st.markdown(f"**{j2}**")
-            s2 = st.number_input("Sets", 0, 2, int(valores_salvos[1]), key=f"dir_s2_{m_str}")
-            t2 = st.number_input("Tentos", 0, 72, int(valores_salvos[3]), key=f"dir_t2_{m_str}")
-            f2 = st.number_input("Flores", 0, 20, int(valores_salvos[5]), key=f"dir_f2_{m_str}")
-            
-        if st.button("💾 Atualizar Placar", key=f"btn_salvar_dir_{m_str}"):
-            bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, m_str)
-            if bloqueia:
-                st.error(msg)
-            else:
-                st.session_state.placares_rodada_atual[m_str] = [ns1, ns2, nt1, nt2, f1, f2, True]
-                salvar_estado_no_disco()
-                st.success("Placar atualizado na planta baixa!")
-                st.rerun()
+    bloqueia, ns1, ns2, nt1, nt2, msg = conferir_e_ajustar_valores(s1, s2, t1, t2, j1, j2, m_str)
+    if not bloqueia:
+        st.session_state.placares_rodada_atual[m_str] = [ns1, ns2, nt1, nt2, f1, f2, True]
+        salvar_estado_no_disco()
 
 # --- HTML/CSS PLANTA BAIXA DA MESA ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
@@ -445,11 +429,24 @@ with aba_arena:
                     label_mesa = f"MESA {m_str} - {st.session_state.fase_matamata}"
                 
                 st.write(f"**{label_mesa}**")
-                desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
                 
-                # Exibe o painel de inputs logo abaixo se for admin
+                # Montagem das colunas dinâmicas (Mesa + Controles ao lado se for admin)
                 if is_admin:
-                    renderizar_painel_lancamento_direto(m_str, j1, j2)
+                    col_mesa, col_ctrl1, col_ctrl2 = st.columns([3, 1, 1])
+                    with col_mesa:
+                        desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
+                    with col_ctrl1:
+                        st.markdown(f"🤠 **{j1}**")
+                        st.number_input("Sets", 0, 2, int(p[0]), key=f"dir_s1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                        st.number_input("Tentos", 0, 72, int(p[2]), key=f"dir_t1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                        st.number_input("Flores", 0, 20, int(p[4]), key=f"dir_f1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                    with col_ctrl2:
+                        st.markdown(f"🤠 **{j2}**")
+                        st.number_input("Sets", 0, 2, int(p[1]), key=f"dir_s2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                        st.number_input("Tentos", 0, 72, int(p[3]), key=f"dir_t2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                        st.number_input("Flores", 0, 20, int(p[5]), key=f"dir_f2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                else:
+                    desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
                         
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
@@ -470,11 +467,22 @@ with aba_arena:
                     m_str = str(contador_real_mesa)
                     p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                     
-                    desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
-                    
-                    # Exibe o painel de inputs logo abaixo se for admin
                     if is_admin:
-                        renderizar_painel_lancamento_direto(m_str, j1, j2)
+                        col_mesa, col_ctrl1, col_ctrl2 = st.columns([3, 1, 1])
+                        with col_mesa:
+                            desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
+                        with col_ctrl1:
+                            st.markdown(f"🤠 **{j1}**")
+                            st.number_input("Sets", 0, 2, int(p[0]), key=f"dir_s1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                            st.number_input("Tentos", 0, 72, int(p[2]), key=f"dir_t1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                            st.number_input("Flores", 0, 20, int(p[4]), key=f"dir_f1_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                        with col_ctrl2:
+                            st.markdown(f"🤠 **{j2}**")
+                            st.number_input("Sets", 0, 2, int(p[1]), key=f"dir_s2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                            st.number_input("Tentos", 0, 72, int(p[3]), key=f"dir_t2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                            st.number_input("Flores", 0, 20, int(p[5]), key=f"dir_f2_{m_str}", on_change=disparar_atualizacao_placar, args=(m_str, j1, j2))
+                    else:
+                        desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
                         
                     contador_real_mesa += 1
             
@@ -509,6 +517,8 @@ with aba_arena:
                     st.rerun()
             else:
                 if st.button("🏆 Consolidar Eliminatória e Avançar", type="primary"):
+                    vencedores = []
+                    perdedores = []
                     for c in st.session_state.confrontos_mm:
                         m_str = c["id_original"]
                         p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
