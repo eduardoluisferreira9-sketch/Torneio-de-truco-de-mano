@@ -159,103 +159,7 @@ st.markdown("""
     .galeria-ouro { color: #d4af37 !important; font-weight: 900; }
     .galeria-linha-secundaria { font-size: 1.1rem; color: #e0e0e0; }
     
-    /* 🏆 CSS DO PODIO DE PREMIAÇÃO FINAL */
-    .arena-podio-wrapper {
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 20px;
-        margin: 40px auto 20px auto;
-        max-width: 1000px;
-        font-family: sans-serif;
-    }
-    .podio-degrau {
-        flex: 1;
-        border-radius: 20px 20px 10px 10px;
-        text-align: center;
-        padding: 25px 15px;
-        box-shadow: 0px 15px 35px rgba(0,0,0,0.7);
-        position: relative;
-    }
-    .degrau-1 {
-        background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312);
-        height: 280px;
-        border: 4px solid #ffffff;
-        box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7);
-        z-index: 3;
-    }
-    .degrau-2 {
-        background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070);
-        height: 220px;
-        border: 3px solid #e0e0e0;
-        z-index: 2;
-    }
-    .degrau-3 {
-        background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18);
-        height: 180px;
-        border: 3px solid #e69d5e;
-        z-index: 1;
-    }
-    .podio-posicao {
-        font-size: 3.5rem;
-        font-weight: 900;
-        margin: 0;
-        line-height: 1;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .degrau-1 .podio-posicao { color: #000000 !important; }
-    .degrau-2 .podio-posicao { color: #111111 !important; }
-    .degrau-3 .podio-posicao { color: #ffffff !important; }
-    
-    .podio-nome-atleta {
-        font-size: 1.6rem;
-        font-weight: 900;
-        text-transform: uppercase;
-        margin: 15px 0 5px 0;
-        letter-spacing: 1px;
-        word-wrap: break-word;
-    }
-    .degrau-1 .podio-nome-atleta { color: #07140f !important; }
-    .degrau-2 .podio-nome-atleta { color: #07140f !important; }
-    .degrau-3 .podio-nome-atleta { color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
-
-    .podio-sub-label {
-        font-size: 0.85rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    .degrau-1 .podio-sub-label { color: #403000 !important; }
-    .degrau-2 .podio-sub-label { color: #222222 !important; }
-    .degrau-3 .podio-sub-label { color: #f0f0f0 !important; }
-
-    .secao-premios-especiais {
-        display: flex;
-        justify-content: center;
-        gap: 25px;
-        max-width: 1000px;
-        margin: 20px auto 40px auto;
-        font-family: sans-serif;
-    }
-    .card-premio-quarto {
-        flex: 1;
-        background: linear-gradient(135deg, #07140f, #1c4234);
-        border: 2px solid #d4af37;
-        border-radius: 15px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
-    }
-    .card-premio-flor {
-        flex: 1;
-        background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4);
-        border: 3px solid #ffffff;
-        border-radius: 15px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0px 10px 25px rgba(255,105,180,0.3), 0px 8px 20px rgba(0,0,0,0.5);
-    }
-    
-    .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
+    box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
     .creditos { text-align: center; color: #ffffff !important; font-size: 0.8rem; margin-top: 50px; }
 
     div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #113223 !important; width: 100%; }
@@ -593,50 +497,53 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
             
-            # 🚀 CORREÇÃO DA RENDERIZAÇÃO: Adicionando prefixo fixo para forçar string no HTML do navegador
-            champ = f"👤 Atleta {st.session_state.campeao}"
-            vice = f"👤 Atleta {st.session_state.vice_campeao}"
-            third = f"👤 Atleta {st.session_state.terceiro_lugar}" if st.session_state.terceiro_lugar else "N/A"
-            fourth = f"👤 Atleta {st.session_state.quarto_lugar}" if st.session_state.quarto_lugar else "N/A"
+            # Sanitização e preparação das strings de texto
+            champ = str(st.session_state.campeao)
+            vice = str(st.session_state.vice_campeao)
+            third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
+            fourth = str(st.session_state.quarto_lugar) if st.session_state.quarto_lugar else "N/A"
             
-            rei_flor_nome = f"👤 Atleta {st.session_state.classificacao['Flores'].idxmax()}"
+            rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
+            # HTML totalmente inline e blindado contra quebras de bloco de Markdown
             html_podio_supremo = f"""
-            <div class="arena-podio-wrapper">
-                <div class="podio-degrau degrau-2">
-                    <p class="podio-posicao">2º</p>
-                    <div class="podio-nome-atleta" style="color: #07140f !important;">{vice}</div>
-                    <div class="podio-sub-label">🥈 Vice-Campeão</div>
+            <div class="arena-podio-wrapper" style="display: flex; align-items: flex-end; justify-content: center; gap: 20px; margin: 40px auto 20px auto; max-width: 1000px; font-family: sans-serif;">
+                <div class="podio-degrau degrau-2" style="flex: 1; background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070); height: 220px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e0e0e0;">
+                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #111111 !important;">2º</p>
+                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f !important; word-wrap: break-word;">👤 ATLETA {vice}</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #222222 !important;">🥈 Vice-Campeão</div>
                 </div>
                 
-                <div class="podio-degrau degrau-1">
-                    <p class="podio-posicao">1º</p>
-                    <div class="podio-nome-atleta" style="color: #07140f !important;">{champ}</div>
-                    <div class="podio-sub-label">👑 Rei do Truco / Campeão Supremo</div>
+                <div class="podio-degrau degrau-1" style="flex: 1; background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312); height: 280px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; border: 4px solid #ffffff; box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7);">
+                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #000000 !important;">1º</p>
+                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f !important; word-wrap: break-word;">👑 ATLETA {champ}</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #403000 !important;">👑 Rei do Truco / Campeão Supremo</div>
                 </div>
                 
-                <div class="podio-degrau degrau-3">
-                    <p class="podio-posicao">3º</p>
-                    <div class="podio-nome-atleta" style="color: #ffffff !important;">{third}</div>
-                    <div class="podio-sub-label">🥉 3º Colocado</div>
+                <div class="podio-degrau degrau-3" style="flex: 1; background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18); height: 180px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e69d5e;">
+                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #ffffff !important;">3º</p>
+                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); word-wrap: break-word;">👤 ATLETA {third}</div>
+                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #f0f0f0 !important;">🥉 3º Colocado</div>
                 </div>
             </div>
             
-            <div class="secao-premios-especiais">
-                <div class="card-premio-quarto">
+            <div class="secao-premios-especiais" style="display: flex; justify-content: center; gap: 25px; max-width: 1000px; margin: 20px auto 40px auto; font-family: sans-serif;">
+                <div class="card-premio-quarto" style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0px 8px 20px rgba(0,0,0,0.5);">
                     <h4 style="margin:0; color:#d4af37 !important; font-weight:bold;">🏅 FINALISTA EXTRAORDINÁRIO (4º Lugar)</h4>
-                    <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">{fourth}</h2>
+                    <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">👤 ATLETA {fourth}</h2>
                 </div>
                 
-                <div class="card-premio-flor">
+                <div class="card-premio-flor" style="flex: 1; background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4); border: 3px solid #ffffff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0px 10px 25px rgba(255,105,180,0.3), 0px 8px 20px rgba(0,0,0,0.5);">
                     <h3 style="margin:0; color:#ffffff !important; font-weight:900; text-transform:uppercase; letter-spacing:1px;">🌸 TROFÉU MAIOR CANTADOR DE FLOR 🌸</h3>
-                    <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">{rei_flor_nome}</h2>
+                    <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">🌸 ATLETA {rei_flor_nome}</h2>
                     <p style="margin:0; font-weight:bold; color:#ffe066 !important; font-size:1.1rem;">Dominou o galpão cantando {rei_flor_val} flores!</p>
                 </div>
             </div>
             """
-            st.markdown(html_podio_supremo, unsafe_allow_html=True)
+            # Tratamento crucial para condensar em linha única sem quebras de linha Markdown fantasmas
+            html_higienizado = "".join([l.strip() for l in html_podio_supremo.split("\n")])
+            st.markdown(html_higienizado, unsafe_allow_html=True)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
                 novo_registro = {
@@ -788,7 +695,6 @@ with aba_arena:
                             if not (s1 == 2 or s2 == 2):
                                 st.error(f"❌ Partida inacabada na mesa {c['id_original']}!"); erro_mm = True
                             if (s1 == 2 and s2 == 1 and (t1 < 48 or t2 < 24)) or (s2 == 2 and s1 == 1 and (t2 < 48 or t1 < 24)):
-                                DocumentError = True
                                 st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos exigidos para o placar 2x1 (48 e 24 tentos)."); erro_mm = True
                         
                         if not erro_mm:
@@ -825,7 +731,6 @@ with aba_tabela:
         
         if st.session_state.historico_rodadas:
             st.markdown("---")
-            st.markdown("<div class='box-auditoria'>", unsafe_allow_html=True)
             st.markdown("### 🔍 Auditoria e Correção de Rodadas Passadas")
             
             rodadas_concluidas = list(st.session_state.historico_rodadas.keys())
@@ -855,7 +760,6 @@ with aba_tabela:
                         else:
                             st.markdown(f"👉 **Placar Registrado:** {dados['s1']}s {dados['t1']}t (🌸{dados['f1']}fl)  **VS** {dados['s2']}s {dados['t2']}t (🌸{dados['f2']}fl)")
                         st.markdown("---")
-            st.markdown("</div>", unsafe_allow_html=True)
 
 # --- ABA 3: GALERIA DE CAMPEÕES ---
 with aba_historico:
