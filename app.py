@@ -35,15 +35,14 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (FUNDO VERDE FELTRO DE MESA E MÁXIMO CONTRASTE)
+# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (MÁXIMO CONTRASTE BRANCO E OURO)
 st.markdown("""
     <style>
-    /* Suavizado para o verde feltro tradicional de mesa de cartas */
-    .stApp { background-color: #1e4d3a; } 
+    .stApp { background-color: #0d231a; } 
     
     section[data-testid="stSidebar"] {
-        background-color: #0f2b20;
-        border-right: 2px solid #2d6b52;
+        background-color: #07140f;
+        border-right: 2px solid #1c4234;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
@@ -80,7 +79,7 @@ st.markdown("""
     /* Inputs de Texto (Tentos 2x1) */
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
-        background-color: #0f2b20 !important;
+        background-color: #07140f !important;
         border: 2px solid #d4af37 !important;
         text-align: center !important;
         font-weight: bold !important;
@@ -90,7 +89,7 @@ st.markdown("""
     /* Inputs Numéricos */
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
-        background-color: #0f2b20 !important;
+        background-color: #07140f !important;
         border: 2px solid #d4af37 !important;
         text-align: center !important;
         font-weight: bold !important;
@@ -105,7 +104,7 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    button[data-baseweb="tab"] { color: #bfe3d5 !important; }
+    button[data-baseweb="tab"] { color: #a0c0b5 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
     
     .stButton>button {
@@ -116,29 +115,29 @@ st.markdown("""
     }
     
     .cronometro-box { 
-        background-color: #0f2b20; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
+        background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         text-align: center;
     }
     
     .chapeu-box {
-        background-color: #265c45; border: 2px dashed #d4af37; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;
+        background-color: #113223; border: 2px dashed #d4af37; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;
     }
     
     /* Pódio Atualizado */
     .podio-container { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; margin-top: 20px; }
     .card-campeao { background: linear-gradient(135deg, #d4af37, #aa8312); color: #000 !important; width: 80%; padding: 30px; border-radius: 20px; text-align: center; border: 5px solid #fff; box-shadow: 0px 10px 30px rgba(0,0,0,0.5); }
-    .card-vice { background-color: #0f2b20; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
+    .card-vice { background-color: #07140f; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
     .honor-row { display: flex; gap: 15px; width: 70%; justify-content: center; }
-    .card-terceiro { background-color: #0f2b20; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #cd7f32; }
-    .card-quarto { background-color: #0f2b20; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #2d6b52; }
+    .card-terceiro { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #cd7f32; }
+    .card-quarto { background-color: #07140f; color: #fff !important; flex: 1; padding: 15px; border-radius: 10px; text-align: center; border: 2px solid #1c4234; }
     .card-flor { background-color: #ff69b4; color: #000 !important; width: 60%; padding: 10px; border-radius: 50px; text-align: center; font-weight: bold; margin-top: 20px; border: 2px solid #fff; }
     
-    .box-auditoria { background-color: #0f2b20; border: 2px solid #2d6b52; padding: 20px; border-radius: 10px; margin-top: 30px; }
+    .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
     
     .creditos { text-align: center; color: #ffffff !important; font-size: 0.8rem; margin-top: 50px; }
 
-    div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #265c45 !important; width: 100%; }
-    div[data-testid="stTable"] th { background-color: #0f2b20 !important; color: #d4af37 !important; border: 2px solid #ffffff !important; text-align: center !important; }
+    div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #113223 !important; width: 100%; }
+    div[data-testid="stTable"] th { background-color: #07140f !important; color: #d4af37 !important; border: 2px solid #ffffff !important; text-align: center !important; }
     div[data-testid="stTable"] td { color: #ffffff !important; border: 2px solid #ffffff !important; text-align: center !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -360,14 +359,14 @@ def salvar_mudanca_retroativa(r_alvo, m_id, j1, j2):
 # --- DESENHO DA MESA DO TORNEIO ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
-    <div style="background-color: #265c45; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.8), 0px 10px 20px rgba(0,0,0,0.4); height: 410px; box-sizing: border-box; color: #ffffff; font-family: sans-serif; margin-bottom: 5px;">
+    <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); height: 410px; box-sizing: border-box; color: #ffffff; font-family: sans-serif; margin-bottom: 5px;">
         <div style="position: absolute; top: 15px; text-align: center; width: 100%;">
             <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold;">🧔 JOGADOR 1</div>
             <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #000; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; border: 1px solid #fff;">{j1}</div>
         </div>
-        <div style="background-color: rgba(15, 43, 32, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 12px; width: 85%; margin-top: 95px; text-align: center;">
+        <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 12px; width: 85%; margin-top: 95px; text-align: center;">
             <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold; letter-spacing: 2px;">🎰 MESA {mesa_num}</div>
-            <hr style="margin: 8px 0; border-top: 1px solid #2d6b52;">
+            <hr style="margin: 8px 0; border-top: 1px solid #1c4234;">
             <div style="display: flex; justify-content: space-around; align-items: center; font-size: 2rem; font-weight: bold;">
                 <div style="color: #d4af37;">{int(s1)}<span style="font-size:1.1rem;">s</span> {int(t1)}<span style="font-size:1.1rem;">t</span></div>
                 <div style="font-size: 1rem; color: #d4af37;">VS</div>
@@ -401,6 +400,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
         if not jogo_encerrado:
             st.warning("Definir os Sets para liberar os Tentos.")
         else:
+            # CORRIGIDO: Removido o logo do emoji que sumia e garantido HTML limpo em Branco
             st.markdown(f"<h4 class='titulo-passo-admin'>• TENTOS (Passo 2)</h4>", unsafe_allow_html=True)
             
             # CASO 1: Vencedor por 2x0 seco (Jogador 1)
@@ -429,7 +429,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
 
 # --- BARRA LATERAL ---
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnico")
+    st.markdown("## ⚙️ Gestão Técnica")
     senha = st.text_input("Chave Master:", type="password")
     is_admin = (senha == CHAVE_ADMINISTRADOR)
     if is_admin:
