@@ -286,26 +286,66 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     salvar_estado_no_disco()
 
 # =========================================================================
-# 🏛️ MONTAGEM DA PAISAGEM DE TRÊS COLUNAS (WIDE SCREEN REORGANIZADO)
+# 🏛️ MONTAGEM DA PAISAGEM DE TRÊS COLUNAS (WIDE SCREEN INVERTIDO)
 # =========================================================================
 col_esquerda, col_centro, col_direita = st.columns([1, 2, 1])
 
 # -------------------------------------------------------------------------
-# 📊 COLUNA DA ESQUERDA: Classificação Permanente no Telão
+# 🔐 COLUNA DA ESQUERDA: Painel Retrátil do Operador (Aba abre/fecha limpa)
 # -------------------------------------------------------------------------
 with col_esquerda:
-    st.markdown("### 📊 Classificação ao Vivo")
-    st.markdown('<div class="card-lateral">', unsafe_allow_html=True)
+    st.markdown("### ⚙️ Gestão Técnica")
     
-    if st.session_state.classificacao is not None:
-        df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
-        for i, (competidor, linha) in enumerate(df_rank.iterrows()):
-            icone = "🥇" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🔹"))
-            st.markdown(f"{icone} **{competidor}** <br> `{int(linha['Vitorias'])} Vitórias` | `S: {int(linha['Sets_Ganhos'])}` | `Fl: {int(linha['Flores'])}`", unsafe_allow_html=True)
-            st.markdown('<hr style="border-color: #1a3327; margin: 6px 0;">', unsafe_allow_html=True)
-    else:
-        st.info("Aguardando o início do torneio para gerar as pontuações dinâmicas.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.expander("🛠️ Abrir Painel do Operador", expanded=False):
+        senha_inserida = st.text_input("Chave do Operador:", type="password")
+        is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
+        
+        if is_admin:
+            st.success("⚡ Administrador Conectado")
+            
+            # Controles do Cronômetro
+            st.markdown("**⏱️ Tempo de Jogo:**")
+            c_c1, c_c2 = st.columns(2)
+            with c_c1:
+                if st.button("▶️ Iniciar 45m"):
+                    st.session_state.hora_inicio_rodada = datetime.now()
+                    st.session_state.cronometro_ativo = True
+                    salvar_estado_no_disco()
+                    st.rerun()
+            with c_c2:
+                if st.button("⏹️ Pausar"):
+                    st.session_state.hora_inicio_rodada = None
+                    st.session_state.cronometro_ativo = False
+                    salvar_estado_no_disco()
+                    st.rerun()
+            
+            # QR Code e Redes
+            st.markdown("---")
+            st.markdown("🌐 **Acesso Mobile:**")
+            url_torneio = st.text_input("Link da Rede Local:", value=st.session_state.get("url_override", url_oficial))
+            st.session_state["url_override"] = url_torneio
+            
+            qr = qrcode.QRCode(version=1, box_size=6, border=2)
+            qr.add_data(url_torneio)
+            qr.make(fit=True)
+            img_qr = qr.make_image(fill_color="black", back_color="white")
+            buf = BytesIO()
+            img_qr.save(buf, format="PNG")
+            st.image(buf.getvalue(), caption="QR Code de Consulta", use_container_width=True)
+            
+            # Reset Geral
+            st.markdown("---")
+            if st.button("🚨 LIMPAR E REINICIAR TORNEIO"):
+                if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
+                st.session_state.clear()
+                st.rerun()
+        else:
+            st.info("Insira a chave para liberar os controles de tempo, rede e reinicialização.")
+
+    # Propaganda Secundária abaixo do expander técnico
+    if os.path.exists(PATROCINADORES["secundario"]["logo"]):
+        st.markdown("---")
+        st.image(PATROCINADORES["secundario"]["logo"], use_container_width=True, caption="Parceiro Oficial")
 
 
 # -------------------------------------------------------------------------
@@ -325,7 +365,6 @@ with col_centro:
             st.markdown("---")
             st.markdown("### 👤 Cadastro de Jogadores")
             
-            # Form colocado diretamente na aba
             with st.form(key="form_cadastro", clear_on_submit=True):
                 novo_jogador = st.text_input("Nome do Jogador:")
                 submit_add = st.form_submit_button("➕ Adicionar Jogador")
@@ -593,62 +632,26 @@ with col_centro:
 
 
 # -------------------------------------------------------------------------
-# 🔐 COLUNA DA DIREITA: Painel Retrátil do Operador (Aba abre/fecha limpa)
+# 📊 COLUNA DA DIREITA: Classificação Permanente no Telão
 # -------------------------------------------------------------------------
 with col_direita:
-    st.markdown("### ⚙️ Gestão Técnica")
+    st.markdown("### 📊 Classificação ao Vivo")
+    st.markdown('<div class="card-lateral">', unsafe_allow_html=True)
     
-    # 🌟 MODIFICADO: Tudo agora fica em uma aba retrátil limpa para não poluir
-    with st.expander("🛠️ Abrir Painel do Operador", expanded=False):
-        senha_inserida = st.text_input("Chave do Operador:", type="password")
-        is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
-        
-        if is_admin:
-            st.success("⚡ Administrador Conectado")
-            
-            # Controles do Cronômetro
-            st.markdown("**⏱️ Tempo de Jogo:**")
-            c_c1, c_c2 = st.columns(2)
-            with c_c1:
-                if st.button("▶️ Iniciar 45m"):
-                    st.session_state.hora_inicio_rodada = datetime.now()
-                    st.session_state.cronometro_ativo = True
-                    salvar_estado_no_disco()
-                    st.rerun()
-            with c_c2:
-                if st.button("⏹️ Pausar"):
-                    st.session_state.hora_inicio_rodada = None
-                    st.session_state.cronometro_ativo = False
-                    salvar_estado_no_disco()
-                    st.rerun()
-            
-            # QR Code e Redes
-            st.markdown("---")
-            st.markdown("🌐 **Acesso Mobile:**")
-            url_torneio = st.text_input("Link da Rede Local:", value=st.session_state.get("url_override", url_oficial))
-            st.session_state["url_override"] = url_torneio
-            
-            qr = qrcode.QRCode(version=1, box_size=6, border=2)
-            qr.add_data(url_torneio)
-            qr.make(fit=True)
-            img_qr = qr.make_image(fill_color="black", back_color="white")
-            buf = BytesIO()
-            img_qr.save(buf, format="PNG")
-            st.image(buf.getvalue(), caption="QR Code de Consulta", use_container_width=True)
-            
-            # Reset Geral
-            st.markdown("---")
-            if st.button("🚨 LIMPAR E REINICIAR TORNEIO"):
-                if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
-                st.session_state.clear()
-                st.rerun()
-        else:
-            st.info("Insira a chave para liberar os controles de tempo, rede e reinicialização.")
+    if st.session_state.classificacao is not None:
+        df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
+        for i, (competidor, linha) in enumerate(df_rank.iterrows()):
+            icone = "🥇" if i == 0 else ("🥈" if i == 1 else ("🥉" if i == 2 else "🔹"))
+            st.markdown(f"{icone} **{competidor}** <br> `{int(linha['Vitorias'])} Vitórias` | `S: {int(linha['Sets_Ganhos'])}` | `Fl: {int(linha['Flores'])}`", unsafe_allow_html=True)
+            st.markdown('<hr style="border-color: #1a3327; margin: 6px 0;">', unsafe_allow_html=True)
+    else:
+        st.info("Aguardando o início do torneio para gerar as pontuações dinâmicas.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Propaganda Fixa abaixo do expander (Opcional, discreta)
-    if os.path.exists(PATROCINADORES["secundario"]["logo"]):
+    # Propaganda Fixa abaixo do ranking
+    if os.path.exists(PATROCINADORES["master"]["logo"]):
         st.markdown("---")
-        st.image(PATROCINADORES["secundario"]["logo"], use_container_width=True, caption="Parceiro Oficial")
+        st.image(PATROCINADORES["master"]["logo"], use_container_width=True, caption="Patrocinador Master")
 
 
 # --- RODAPÉ COM OS PARCEIROS DAS MESAS ---
