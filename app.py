@@ -37,7 +37,7 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS (Atualizada com divisões nítidas para a Tabela)
+# 🛠️ ESTILIZAÇÃO CSS (Forçando a separação nítida das linhas do st.table)
 st.markdown("""
     <style>
     /* Fundo Geral */
@@ -110,14 +110,22 @@ st.markdown("""
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
 
-    /* 📊 FORÇAR DIVISÕES E BORDAS FORTES NA TABELA STREAMLIT */
-    div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
-        border: 2px solid #5a3825 !important; /* Bordas cor couro bem definidas */
+    /* 📊 CUSTOMIZAÇÃO DE GRADE ESTÁTICA PARA O ST.TABLE */
+    div[data-testid="stTable"] table {
+        border: 3px solid #5a3825 !important; /* Borda grossa externa cor guaiaca/couro */
+        background-color: #113223 !important;
     }
-    div[data-testid="stDataFrame"] th {
+    div[data-testid="stTable"] th {
         background-color: #07140f !important;
         color: #d4af37 !important;
         font-weight: bold !important;
+        border: 2px solid #5a3825 !important; /* Divisórias dos cabeçalhos */
+        text-align: center !important;
+    }
+    div[data-testid="stTable"] td {
+        color: #ffffff !important;
+        border: 2px solid #3d2214 !important; /* Divisórias internas bem marcadas e visíveis */
+        text-align: center !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -478,26 +486,14 @@ with aba_arena:
                         iniciar_fase_matamata(list(df_v.index[:16 if n_insc > 16 else (8 if n_insc >= 8 else 4)]), f_nome)
                     st.rerun()
 
-# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO ---
+# --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO (Forçando Grades Fortes com st.table) ---
 with aba_tabela:
     st.markdown("### 📊 Tabela de Classificação Atualizada")
     if st.session_state.classificacao is not None:
         df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
         
-        # Estilização limpa: mantendo as cores mate/pampa com divisões nítidas via Pandas Styler
-        estilo_campeiro = (
-            df_rank.style
-            .set_properties(**{
-                'background-color': '#113223',
-                'color': '#ffffff',
-                'font-size': '1.05rem',
-                'text-align': 'center'
-            })
-            .set_table_styles([
-                {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#0b2016')]}
-            ])
-        )
-        st.dataframe(estilo_campeiro, use_container_width=True)
+        # O st.table desenha uma tabela estática perfeita onde as divisórias do CSS funcionam 100%
+        st.table(df_rank)
     else:
         st.info("O torneio ainda não foi iniciado. Aguardando competidores.")
 
@@ -507,7 +503,7 @@ with aba_historico:
     if os.path.exists(ARQUIVO_GALERIA):
         with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
         if dg: 
-            st.dataframe(pd.DataFrame(dg), use_container_width=True, hide_index=True)
+            st.table(pd.DataFrame(dg))
         else:
             st.info("Nenhum registro encontrado na galeria até o momento.")
     else:
