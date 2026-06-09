@@ -497,7 +497,7 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
             
-            # Sanitização e preparação das strings de texto
+            # Sanitização estrita das strings de texto
             champ = str(st.session_state.campeao)
             vice = str(st.session_state.vice_campeao)
             third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
@@ -506,44 +506,49 @@ with aba_arena:
             rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
-            # HTML totalmente inline e blindado contra quebras de bloco de Markdown
-            html_podio_supremo = f"""
-            <div class="arena-podio-wrapper" style="display: flex; align-items: flex-end; justify-content: center; gap: 20px; margin: 40px auto 20px auto; max-width: 1000px; font-family: sans-serif;">
-                <div class="podio-degrau degrau-2" style="flex: 1; background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070); height: 220px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e0e0e0;">
-                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #111111 !important;">2º</p>
-                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f !important; word-wrap: break-word;">👤 ATLETA {vice}</div>
-                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #222222 !important;">🥈 Vice-Campeão</div>
+            # CONSTRUÇÃO DO IFRAME ISOLADO COM COMPONENTS.HTML (BLINDAGEM CONTRA BUG DO ST.MARKDOWN)
+            html_iframe_podio = f"""
+            <div style="background-color: #0d231a; padding: 10px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; box-sizing: border-box;">
+                
+                <div style="display: flex; align-items: flex-end; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 20px auto;">
+                    
+                    <div style="flex: 1; background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070); height: 210px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 20px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e0e0e0; box-sizing: border-box;">
+                        <p style="font-size: 3.2rem; font-weight: 900; margin: 0; line-height: 1; color: #111111;">2º</p>
+                        <div style="font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {vice}</div>
+                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #222222;">🥈 Vice-Campeão</div>
+                    </div>
+                    
+                    <div style="flex: 1; background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312); height: 270px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 10px; border: 4px solid #ffffff; box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7); box-sizing: border-box;">
+                        <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #000000;">1º</p>
+                        <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👑 {champ}</div>
+                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #403000;">Rei do Truco / Campeão</div>
+                    </div>
+                    
+                    <div style="flex: 1; background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18); height: 170px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 15px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e69d5e; box-sizing: border-box;">
+                        <p style="font-size: 2.8rem; font-weight: 900; margin: 0; line-height: 1; color: #ffffff;">3º</p>
+                        <div style="font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin: 10px 0 5px 0; color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {third}</div>
+                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #f0f0f0;">🥉 3º Colocado</div>
+                    </div>
                 </div>
                 
-                <div class="podio-degrau degrau-1" style="flex: 1; background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312); height: 280px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; border: 4px solid #ffffff; box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7);">
-                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #000000 !important;">1º</p>
-                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f !important; word-wrap: break-word;">👑 ATLETA {champ}</div>
-                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #403000 !important;">👑 Rei do Truco / Campeão Supremo</div>
+                <div style="display: flex; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 10px auto;">
+                    <div style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0px 8px 20px rgba(0,0,0,0.5);">
+                        <h5 style="margin:0; color:#d4af37; font-weight:bold; font-size: 0.85rem; text-transform: uppercase;">🏅 Finalista Extraordinário (4º)</h5>
+                        <h3 style="margin:8px 0 0 0; font-weight:900; font-size:1.3rem; color:#ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {fourth}</h3>
+                    </div>
+                    
+                    <div style="flex: 1; background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4); border: 2px solid #ffffff; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0px 10px 25px rgba(255,105,180,0.2);">
+                        <h5 style="margin:0; color:#ffffff; font-weight:900; text-transform:uppercase; font-size: 0.85rem;">🌸 Maior Cantador de Flor</h5>
+                        <h3 style="margin:5px 0 2px 0; font-weight:900; font-size:1.4rem; color:#ffffff; text-shadow:2px 2px 4px rgba(0,0,0,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🌸 {rei_flor_nome}</h3>
+                        <p style="margin:0; font-weight:bold; color:#ffe066; font-size:0.85rem;">Cantou {rei_flor_val} flores!</p>
+                    </div>
                 </div>
-                
-                <div class="podio-degrau degrau-3" style="flex: 1; background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18); height: 180px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 15px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e69d5e;">
-                    <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #ffffff !important;">3º</p>
-                    <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #ffffff !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); word-wrap: break-word;">👤 ATLETA {third}</div>
-                    <div style="font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: #f0f0f0 !important;">🥉 3º Colocado</div>
-                </div>
-            </div>
-            
-            <div class="secao-premios-especiais" style="display: flex; justify-content: center; gap: 25px; max-width: 1000px; margin: 20px auto 40px auto; font-family: sans-serif;">
-                <div class="card-premio-quarto" style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0px 8px 20px rgba(0,0,0,0.5);">
-                    <h4 style="margin:0; color:#d4af37 !important; font-weight:bold;">🏅 FINALISTA EXTRAORDINÁRIO (4º Lugar)</h4>
-                    <h2 style="margin:5px 0 0 0; font-weight:900; font-size:1.6rem; color:#ffffff;">👤 ATLETA {fourth}</h2>
-                </div>
-                
-                <div class="card-premio-flor" style="flex: 1; background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4); border: 3px solid #ffffff; border-radius: 15px; padding: 20px; text-align: center; box-shadow: 0px 10px 25px rgba(255,105,180,0.3), 0px 8px 20px rgba(0,0,0,0.5);">
-                    <h3 style="margin:0; color:#ffffff !important; font-weight:900; text-transform:uppercase; letter-spacing:1px;">🌸 TROFÉU MAIOR CANTADOR DE FLOR 🌸</h3>
-                    <h2 style="margin:5px 0 2px 0; font-weight:900; font-size:2rem; color:#ffffff !important; text-shadow:2px 2px 4px rgba(0,0,0,0.5);">🌸 ATLETA {rei_flor_nome}</h2>
-                    <p style="margin:0; font-weight:bold; color:#ffe066 !important; font-size:1.1rem;">Dominou o galpão cantando {rei_flor_val} flores!</p>
-                </div>
+
             </div>
             """
-            # Tratamento crucial para condensar em linha única sem quebras de linha Markdown fantasmas
-            html_higienizado = "".join([l.strip() for l in html_podio_supremo.split("\n")])
-            st.markdown(html_higienizado, unsafe_allow_html=True)
+            
+            # Execução pelo Componente HTML puro, que força isolamento absoluto de layout
+            components.html(html_iframe_podio, height=520, scrolling=False)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
                 novo_registro = {
