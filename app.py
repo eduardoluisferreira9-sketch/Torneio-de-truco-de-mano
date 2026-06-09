@@ -1,4 +1,3 @@
-import streamlit as str_antigo # Apenas para evitar conflitos, use o código abaixo completo
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -638,6 +637,7 @@ with aba_arena:
                 </div>
             </div>
             """
+            # ADICIONADO O PARAMETRO OBRIGATÓRIO PARA IMPEDIR CÓDIGO HTML TEXTUAL NA TELA
             st.markdown(html_podio_supremo, unsafe_allow_html=True)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
@@ -679,7 +679,7 @@ with aba_arena:
                                 <div class="chapeu-badge">🎩 Jogador no Chapéu</div>
                                 <div class="chapeu-nome">{j1}</div>
                                 <div class="chapeu-subtexto">Você está de folga nesta rodada!</div>
-                                <div class="chapeu-regras">Sua vitória automática foi computada no sistema (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
+                                <div class="chapeu-regras">Sua vitória automática foi computada no system (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
                             </div>
                         """, unsafe_allow_html=True)
                 
