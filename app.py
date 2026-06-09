@@ -26,23 +26,27 @@ CHAVE_ADMINISTRADOR = "truco123"
 # ==========================================
 URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
 
-# 🛠️ ESTILIZAÇÃO CSS REVISADA (Correção de contraste para inputs e abas)
+# 🛠️ ESTILIZAÇÃO CSS REVISADA (Fundo Verde Clássico Confortável e Suave)
 st.markdown("""
     <style>
-    /* Fundo do Telão Principal */
-    .stApp { background-color: #1a1a1a; } 
+    /* Fundo Principal - Verde Feltro de Tabuleiro (Descanso para os olhos) */
+    .stApp { background-color: #0d231a; } 
     
-    /* Barra Lateral */
+    /* Barra Lateral - Tom Verde Mais Fechado Harmônico */
     section[data-testid="stSidebar"] {
-        background-color: #11221a;
-        border-right: 2px solid #2c6b56;
+        background-color: #07140f;
+        border-right: 2px solid #1c4234;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
     /* Textos Gerais do Telão */
     h1, h2, h3, .texto-branco { color: #ffffff !important; }
     
-    /* 🚨 CORREÇÃO DO DIALOG (Letras escuras nos campos de input para fundo claro) */
+    /* Ajuste de Abas do Streamlit para casar com o fundo novo */
+    button[data-baseweb="tab"] { color: #a0c0b5 !important; }
+    button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
+
+    /* CORREÇÃO DO DIALOG (Letras escuras nos campos de input para fundo claro) */
     div[data-testid="stDialog"] label, 
     div[data-testid="stDialog"] p,
     div[data-testid="stDialog"] span { 
@@ -57,11 +61,12 @@ st.markdown("""
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
+        border: 1px solid #aa8312 !important;
     }
     
     /* Caixa de Cronômetro */
     .cronometro-box { 
-        background-color: #11221a; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
+        background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         text-align: center;
     }
@@ -222,7 +227,7 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- INPUT FLUTUANTE (DIALOG) COM TEXTO CORRIGIDO PARA PRETO ---
+# --- INPUT FLUTUANTE (DIALOG) ---
 @st.dialog("💾 Lançar Performance da Mesa")
 def dialog_entrada_placares(mesa_id_string, j1, j2):
     st.write(f"Competidores: **{j1}** vs **{j2}**")
@@ -251,21 +256,21 @@ def dialog_entrada_placares(mesa_id_string, j1, j2):
                 salvar_estado_no_disco()
                 st.rerun()
 
-# --- HTML/CSS PLANTA BAIXA DA MESA ---
+# --- HTML/CSS PLANTA BAIXA DA MESA (Casando perfeitamente com o tom escuro do feltro) ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
-    <div style="background-color: #143525; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); min-height: 410px; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 25px;">
+    <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); min-height: 410px; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 25px;">
         <div style="position: absolute; top: 15px; text-align: center; width: 100%;">
             <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">🧔 JOGADOR 1 (CABECEIRA)</div>
             <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #111111; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; box-shadow: 0px 4px 8px rgba(0,0,0,0.4); border: 1px solid #fff;">
                 {j1}
             </div>
         </div>
-        <div style="background-color: rgba(14, 25, 20, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; width: 85%; margin-top: 100px; text-align: center; box-shadow: 0px 5px 15px rgba(0,0,0,0.5);">
+        <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; width: 85%; margin-top: 100px; text-align: center; box-shadow: 0px 5px 15px rgba(0,0,0,0.5);">
             <div style="font-size: 0.8rem; color: #a0c0b5; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
                 🎰 CONTRATO MESA DE TRUCO {mesa_num}
             </div>
-            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #2c6b56;">
+            <hr style="margin: 8px 0; border: 0; border-top: 1px solid #1c4234;">
             <div style="display: flex; justify-content: space-around; align-items: center; font-family: monospace; font-size: 2rem; font-weight: bold;">
                 <div style="color: #d4af37;">{int(s1)}<span style="font-size:1.1rem; color:#fff;">s</span> {int(t1)}<span style="font-size:1.1rem; color:#fff;">t</span></div>
                 <div style="font-size: 1rem; color: #d4af37; letter-spacing: 1px;">VS</div>
@@ -326,10 +331,10 @@ with st.sidebar:
 # -------------------------------------------------------------------------
 st.markdown(f"<h1 style='text-align:center;'>🏆 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
 
-# As abas agora ficam estruturadas e fixas no topo da aplicação
+# Abas fixadas no topo do layout principal
 aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
 
-# --- ABA 1: ARENA DE CONFRONTOS (Mesa de Jogo Ativa) ---
+# --- ABA 1: ARENA DE CONFRONTOS ---
 with aba_arena:
     if not st.session_state.torneio_iniciado:
         st.markdown("### 🎮 Inscrições de Competidores")
@@ -356,8 +361,8 @@ with aba_arena:
             ta = datetime.now()
             if ta < tl:
                 tr = tl - ta
-                st.markdown(f'<div class="cronometro-box"><h1>⏱️ TEMPO RESTANTE: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h1></div>', unsafe_allow_html=True)
-            else: st.markdown('<div class="cronometro-box"><h1 style="color:#ff4b4b !important;">⏰ TEMPO ESGOTADO!</h1></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="cronometro-box"><h2>⏱️ TEMPO RESTANTE DA RODADA: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h2></div>', unsafe_allow_html=True)
+            else: st.markdown('<div class="cronometro-box"><h2 style="color:#ff4b4b !important;">⏰ TEMPO ESGOTADO!</h2></div>', unsafe_allow_html=True)
             
         if st.session_state.campeao:
             st.markdown(f'<div class="box-campeao"><h1>🥇 CAMPEÃO: {st.session_state.campeao}</h1></div>', unsafe_allow_html=True)
