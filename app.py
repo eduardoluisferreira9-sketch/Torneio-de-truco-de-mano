@@ -37,7 +37,7 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS
+# 🛠️ ESTILIZAÇÃO CSS (Atualizada com divisões nítidas para a Tabela)
 st.markdown("""
     <style>
     /* Fundo Geral */
@@ -109,6 +109,16 @@ st.markdown("""
     
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
+
+    /* 📊 FORÇAR DIVISÕES E BORDAS FORTES NA TABELA STREAMLIT */
+    div[data-testid="stDataFrame"] td, div[data-testid="stDataFrame"] th {
+        border: 2px solid #5a3825 !important; /* Bordas cor couro bem definidas */
+    }
+    div[data-testid="stDataFrame"] th {
+        background-color: #07140f !important;
+        color: #d4af37 !important;
+        font-weight: bold !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -474,20 +484,17 @@ with aba_tabela:
     if st.session_state.classificacao is not None:
         df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
         
-        # Estilização Campeira aplicada diretamente via Pandas Styler
+        # Estilização limpa: mantendo as cores mate/pampa com divisões nítidas via Pandas Styler
         estilo_campeiro = (
             df_rank.style
             .set_properties(**{
                 'background-color': '#113223',
                 'color': '#ffffff',
-                'border-color': '#1c4234',
                 'font-size': '1.05rem',
                 'text-align': 'center'
             })
             .set_table_styles([
-                {'selector': 'th', 'props': [('background-color', '#07140f'), ('color', '#d4af37'), ('font-weight', 'bold'), ('font-size', '1.1rem'), ('text-align', 'center'), ('border', '2px solid #5a3825')]},
-                {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#0b2016')]},
-                {'selector': 'td', 'props': [('border', '1px solid #1c4234')]}
+                {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#0b2016')]}
             ])
         )
         st.dataframe(estilo_campeiro, use_container_width=True)
