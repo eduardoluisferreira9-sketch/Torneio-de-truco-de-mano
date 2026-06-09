@@ -35,7 +35,7 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (ALTO CONTRASTE)
+# 🛠️ ESTILIZAÇÃO CSS ATUALIZADA (MÁXIMO CONTRASTE BRANCO E OURO)
 st.markdown("""
     <style>
     .stApp { background-color: #0d231a; } 
@@ -46,8 +46,14 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
-    h1, h2, h3, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
+    h1, h2, h3, h4, h5, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
         color: #ffffff !important; 
+    }
+    
+    /* Alertas e textos informativos do Streamlit forçados para Branco/Amarelo */
+    div[data-testid="stNotification"] p {
+        color: #ffffff !important;
+        font-weight: bold !important;
     }
     
     /* Títulos de Mesas e Fases com Destaque Forte */
@@ -63,6 +69,7 @@ st.markdown("""
         letter-spacing: 1px;
     }
     
+    /* Inputs de Texto (Tentos 2x1) */
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -72,6 +79,7 @@ st.markdown("""
         font-size: 1.1rem !important;
     }
     
+    /* Inputs Numéricos */
     div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -81,9 +89,11 @@ st.markdown("""
         font-size: 1.1rem !important;
         height: 35px !important;
     }
+    
+    /* Labels acima das caixas de texto e números totalmente Brancos */
     div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
         color: #ffffff !important;
-        font-size: 0.9rem !important;
+        font-size: 0.95rem !important;
         font-weight: bold !important;
     }
     
@@ -106,7 +116,7 @@ st.markdown("""
         background-color: #113223; border: 2px dashed #d4af37; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px;
     }
     
-    /* Pódio Atualizado com Alto Contraste */
+    /* Pódio Atualizado */
     .podio-container { display: flex; flex-direction: column; gap: 15px; width: 100%; align-items: center; margin-top: 20px; }
     .card-campeao { background: linear-gradient(135deg, #d4af37, #aa8312); color: #000 !important; width: 80%; padding: 30px; border-radius: 20px; text-align: center; border: 5px solid #fff; box-shadow: 0px 10px 30px rgba(0,0,0,0.5); }
     .card-vice { background-color: #07140f; color: #fff !important; width: 70%; padding: 20px; border-radius: 15px; text-align: center; border: 3px solid #c0c0c0; }
@@ -117,7 +127,7 @@ st.markdown("""
     
     .box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
     
-    .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
+    .creditos { text-align: center; color: #ffffff !important; font-size: 0.8rem; margin-top: 50px; }
 
     div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #113223 !important; width: 100%; }
     div[data-testid="stTable"] th { background-color: #07140f !important; color: #d4af37 !important; border: 2px solid #ffffff !important; text-align: center !important; }
@@ -314,7 +324,6 @@ def disparar_atualizacao_placar(m_str, j1, j2):
         t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x0j2", p_antigo[2])
         if t1 > 46: t1 = 46
     else:
-        # Modo 2x1 Dinâmico: Lê a String digitada na tela em branco
         t1_raw = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x1", "")
         t2_raw = st.session_state.get(f"dir_t2_{m_str}_r{sem}_2x1", "")
         
@@ -340,7 +349,7 @@ def salvar_mudanca_retroativa(r_alvo, m_id, j1, j2):
     st.session_state.historico_rodadas[r_alvo][m_id]["f2"] = st.session_state[f"ret_f2_{r_alvo}_{m_id}"]
     reconstruir_classificacao_global()
 
-# --- DESENHO DA MESA ---
+# --- DESENHO DA MESA DO TORNEIO ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
     <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); height: 410px; box-sizing: border-box; color: #ffffff; font-family: sans-serif; margin-bottom: 5px;">
@@ -366,7 +375,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     """
     components.html(html_mesa, height=425, scrolling=False)
 
-# --- AUXILIAR DE PREENCHIMENTO EM BRANCO SE 2X1 ---
+# --- CONFIGURAÇÃO DO FORMULÁRIO DO PAINEL DE CONTROLE DE ENTRADAS ---
 def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
     s1, s2, t1, t2, f1, f2 = p[0], p[1], p[2], p[3], p[4], p[5]
@@ -374,7 +383,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     c1, c2 = st.columns([1, 1])
     
     with c1:
-        st.markdown(f"#### ⚔️ Sets (Passo 1)")
+        st.markdown(f"#### <span style='color:#ffffff;'>⚔️ Sets (Passo 1)</span>", unsafe_allow_html=True)
         s1_in = st.number_input(f"Sets - {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
         s2_in = st.number_input(f"Sets - {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -382,20 +391,20 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     
     with c2:
         if not jogo_encerrado:
-            st.warning("⚠️ Definir os Sets para liberar os Tentos.")
+            st.warning("Definir os Sets para liberar os Tentos.")
         else:
-            st.markdown(f"#### 🪙 Tentos (Passo 2)")
+            st.markdown(f"#### <span style='color:#ffffff;'>🪙 Tentos (Passo 2)</span>", unsafe_allow_html=True)
             
             # CASO 1: Vencedor por 2x0 seco (Jogador 1)
             if s1_in == 2 and s2_in == 0:
-                st.info(f"💡 {j1} 2x0. Fixo 72.")
+                st.info(f"{j1} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j1}", 72, 72, 72, key=f"dir_t1_{m}_r{sem_id}_2x0j1", disabled=True)
                 st.number_input(f"Tentos - {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_r{sem_id}_2x0j1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             
             # CASO 2: Vencedor por 2x0 seco (Jogador 2)
             elif s2_in == 2 and s1_in == 0:
                 st.number_input(f"Tentos - {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_r{sem_id}_2x0j2", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                st.info(f"💡 {j2} 2x0. Fixo 72.")
+                st.info(f"{j2} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j2}", 72, 72, 72, key=f"dir_t2_{m}_r{sem_id}_2x0j2", disabled=True)
                 
             # CASO 3: Cenário 2x1 solicitado: Traz caixas de texto Totalmente VAZIAS!
@@ -406,7 +415,7 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
                 st.text_input(f"Digite Tentos - {j1}", value=t1_val_str, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
                 st.text_input(f"Digite Tentos - {j2}", value=t2_val_str, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
             
-            st.markdown(f"#### 🌸 Flores (Passo 3)")
+            st.markdown(f"#### <span style='color:#ffffff;'>🌸 Flores (Passo 3)</span>", unsafe_allow_html=True)
             st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             st.number_input(f"Flores - {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
 
@@ -425,7 +434,7 @@ with st.sidebar:
             salvar_estado_no_disco(); st.rerun()
         st.markdown("---")
         if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
-            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUEMA_GALERIA)
+            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUIVO_GALERIA)
             st.success("Galeria de campeões resetada com sucesso!")
             st.rerun()
         if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)"):
@@ -521,7 +530,7 @@ with aba_arena:
                         m = str(cont)
                         p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                         
-                        # TÍTULO DESTACADO DA MESA EM AMARELO DOUTO
+                        # TÍTULO DESTACADO DA MESA EM AMARELO OURO
                         st.markdown(f'<div class="titulo-mesa-destaque">🎰 MESA {m}</div>', unsafe_allow_html=True)
                         
                         if is_admin:
@@ -583,7 +592,7 @@ with aba_arena:
                                 iniciar_fase_matamata(list(dv.index[:16 if n_in>16 else (8 if n_in>=8 else 4)]), f_n)
                             st.rerun()
 
-            # FASE 2: MATA-MATAS ATÉ A FINAL (COM CORES FORTES E IDENTIFICAÇÃO CLARA)
+            # FASE 2: MATA-MATAS ATÉ A FINAL
             else:
                 st.markdown(f"### ⚡ Eliminatórias Correndo: {st.session_state.fase_matamata}")
                 lista_m = st.session_state.confrontos_mm
@@ -595,7 +604,6 @@ with aba_arena:
                     j1, j2 = c["j1"], c["j2"]
                     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                     
-                    # Identificadores com o nome exato do Mata-Mata e da Mesa correspondente
                     if c["tipo"] == "final":
                         tit = "🏆 GRANDE FINAL DO TORNEIO"
                     elif c["tipo"] == "3place":
@@ -603,7 +611,6 @@ with aba_arena:
                     else:
                         tit = f"⚔️ {st.session_state.fase_matamata} - MESA {m}"
                     
-                    # RENDERIZAÇÃO DO TÍTULO EM TEXTO DESTACADO (AMARELO NO VERDE ESCURO)
                     st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
                     
                     if is_admin:
