@@ -26,27 +26,22 @@ CHAVE_ADMINISTRADOR = "truco123"
 # ==========================================
 URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
 
-# 🛠️ ESTILIZAÇÃO CSS REVISADA (Fundo Verde Clássico Confortável e Suave)
+# 🛠️ ESTILIZAÇÃO CSS
 st.markdown("""
     <style>
-    /* Fundo Principal - Verde Feltro de Tabuleiro (Descanso para os olhos) */
     .stApp { background-color: #0d231a; } 
     
-    /* Barra Lateral - Tom Verde Mais Fechado Harmônico */
     section[data-testid="stSidebar"] {
         background-color: #07140f;
         border-right: 2px solid #1c4234;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
-    /* Textos Gerais do Telão */
     h1, h2, h3, .texto-branco { color: #ffffff !important; }
     
-    /* Ajuste de Abas do Streamlit para casar com o fundo novo */
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
 
-    /* CORREÇÃO DO DIALOG (Letras escuras nos campos de input para fundo claro) */
     div[data-testid="stDialog"] label, 
     div[data-testid="stDialog"] p,
     div[data-testid="stDialog"] span { 
@@ -57,21 +52,28 @@ st.markdown("""
         background-color: #ffffff !important;
     }
     
-    /* Botão Padrão Ouro */
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
         border: 1px solid #aa8312 !important;
     }
     
-    /* Caixa de Cronômetro */
     .cronometro-box { 
         background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
         text-align: center;
     }
     
-    /* Caixa de Campeão */
+    /* Box customizado para o aviso do Chapéu */
+    .chapeu-box {
+        background-color: #113223;
+        border: 2px dashed #d4af37;
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        color: #ffffff !important;
+    }
+    
     .box-campeao { background-color: #d4af37; padding: 25px; border-radius: 15px; text-align: center; color: #111111 !important; border: 3px solid #ffffff; margin-bottom: 15px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
     </style>
@@ -256,17 +258,17 @@ def dialog_entrada_placares(mesa_id_string, j1, j2):
                 salvar_estado_no_disco()
                 st.rerun()
 
-# --- HTML/CSS PLANTA BAIXA DA MESA (Casando perfeitamente com o tom escuro do feltro) ---
+# --- HTML/CSS PLANTA BAIXA DA MESA (Ajustada para fechar perfeitamente embaixo) ---
 def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     html_mesa = f"""
-    <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); min-height: 410px; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 25px;">
+    <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); height: 410px; box-sizing: border-box; color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 5px;">
         <div style="position: absolute; top: 15px; text-align: center; width: 100%;">
             <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px;">🧔 JOGADOR 1 (CABECEIRA)</div>
-            <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #111111; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; box-shadow: 0px 4px 8px rgba(0,0,0,0.4); border: 1px solid #fff;">
+            <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #111111; padding: 6px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; box-shadow: 0px 4px 8px rgba(0,0,0,0.4); border: 1px solid #fff;">
                 {j1}
             </div>
         </div>
-        <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; width: 85%; margin-top: 100px; text-align: center; box-shadow: 0px 5px 15px rgba(0,0,0,0.5);">
+        <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 12px; width: 85%; margin-top: 95px; text-align: center; box-shadow: 0px 5px 15px rgba(0,0,0,0.5);">
             <div style="font-size: 0.8rem; color: #a0c0b5; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
                 🎰 CONTRATO MESA DE TRUCO {mesa_num}
             </div>
@@ -281,14 +283,14 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
             </div>
         </div>
         <div style="position: absolute; bottom: 15px; text-align: center; width: 100%;">
-            <div style="background: linear-gradient(135deg, #ffffff, #dcdcdc); color: #111111; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; box-shadow: 0px 4px 8px rgba(0,0,0,0.4); border: 1px solid #aaa; margin-bottom: 4px;">
+            <div style="background: linear-gradient(135deg, #ffffff, #dcdcdc); color: #111111; padding: 6px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; box-shadow: 0px 4px 8px rgba(0,0,0,0.4); border: 1px solid #aaa; margin-bottom: 4px;">
                 {j2}
             </div>
             <div style="font-size: 0.85rem; color: #ffffff; font-weight: bold; letter-spacing: 1px;">🧔 JOGADOR 2 (CABECEIRA)</div>
         </div>
     </div>
     """
-    components.html(html_mesa, height=435, scrolling=False)
+    components.html(html_mesa, height=425, scrolling=False)
 
 # -------------------------------------------------------------------------
 # 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
@@ -331,7 +333,6 @@ with st.sidebar:
 # -------------------------------------------------------------------------
 st.markdown(f"<h1 style='text-align:center;'>🏆 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
 
-# Abas fixadas no topo do layout principal
 aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
 
 # --- ABA 1: ARENA DE CONFRONTOS ---
@@ -355,7 +356,6 @@ with aba_arena:
                 st.session_state.torneio_iniciado = True
                 gerar_rodada_web(); st.rerun()
     else:
-        # Cronômetro Interno da Arena
         if not st.session_state.campeao and st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
             tl = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
             ta = datetime.now()
@@ -367,7 +367,6 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown(f'<div class="box-campeao"><h1>🥇 CAMPEÃO: {st.session_state.campeao}</h1></div>', unsafe_allow_html=True)
         
-        # Modo Eliminatório Mata-Mata
         elif st.session_state.em_matamata:
             st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
             for idx, c in enumerate(st.session_state.confrontos_mm):
@@ -379,12 +378,19 @@ with aba_arena:
                     if st.button(f"✏️ Lançar Mesa {m_str}", key=f"btn_mm_{m_str}"):
                         dialog_entrada_placares(m_str, j1, j2)
                         
-        # Modo Rodadas Classificatórias
         else:
             st.markdown(f"### 📅 Classificatória: Rodada {st.session_state.rodada_atual} de 5")
+            
+            # 🤠 AJUSTE: Caixa de Chapéu com Altíssima Visibilidade (Fundo Verde e Letras Douradas/Brancas)
             for j1, j2 in st.session_state.confrontos:
                 if j2 == "CHAPÉU (Folga)":
-                    st.markdown(f"🤠 **{j1}** está de folga no Chapéu (Ganha +1V automaticamente).")
+                    st.markdown(f"""
+                        <div class="chapeu-box">
+                            <span style="font-size: 1.2rem; color: #d4af37; font-weight: bold;">🎩 JOGADOR NO CHAPÉU:</span> 
+                            <span style="font-size: 1.3rem; color: #ffffff; font-weight: bold; background-color: #07140f; padding: 4px 12px; border-radius: 6px; border: 1px solid #d4af37;">{j1}</span>
+                            <br><span style="font-size: 0.9rem; color: #a0c0b5; display:inline-block; margin-top:6px;">Este competidor está de folga nesta rodada e soma +1 Vitória (3 Sets e 72 Tentos Pró) automaticamente.</span>
+                        </div>
+                    """, unsafe_allow_html=True)
             
             contador_real_mesa = 1
             for j1, j2 in st.session_state.confrontos:
