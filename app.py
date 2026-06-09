@@ -28,7 +28,6 @@ CHAVE_ADMINISTRADOR = "truco123"
 # ==========================================
 URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
 
-# Tentativa de carregar a imagem do Baralho Espanhol para o Ícone da Página
 icone_pagina = "🃏" 
 try:
     resposta = requests.get(f"{URL_BASE_IMAGENS}/baralho_espanhol.png", timeout=5)
@@ -37,25 +36,21 @@ try:
 except Exception:
     pass
 
-# 🛠️ ESTILIZAÇÃO CSS (Divisórias Brancas de Alto Contraste)
+# 🛠️ ESTILIZAÇÃO CSS
 st.markdown("""
     <style>
-    /* Fundo Geral */
     .stApp { background-color: #0d231a; } 
     
-    /* Barra Lateral */
     section[data-testid="stSidebar"] {
         background-color: #07140f;
         border-right: 2px solid #1c4234;
     }
     section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
     
-    /* Textos, Títulos e Labels Principais em Branco de Alto Contraste */
     h1, h2, h3, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
         color: #ffffff !important; 
     }
     
-    /* Customização dos Inputs (Campos de Texto) no Painel Principal */
     div[data-testid="stTextInput"] input {
         color: #ffffff !important;
         background-color: #07140f !important;
@@ -69,11 +64,9 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* Abas */
     button[data-baseweb="tab"] { color: #a0c0b5 !important; }
     button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
 
-    /* Correção do Pop-up de Lançamento (Dialog) */
     div[data-testid="stDialog"] label, 
     div[data-testid="stDialog"] p,
     div[data-testid="stDialog"] span { 
@@ -84,14 +77,12 @@ st.markdown("""
         background-color: #ffffff !important;
     }
     
-    /* Botões Padrão */
     .stButton>button {
         background-color: #d4af37 !important; color: #111111 !important;
         font-weight: bold !important; border-radius: 8px !important; width: 100%;
         border: 1px solid #aa8312 !important;
     }
     
-    /* Elementos de Layout */
     .cronometro-box { 
         background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
@@ -111,7 +102,6 @@ st.markdown("""
     .box-podio { background-color: #113223; border: 2px solid #d4af37; padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px; }
     .creditos { text-align: center; color: #a0c0b5 !important; font-size: 0.8rem; margin-top: 50px; }
 
-    /* 📊 FORÇAR DIVISÓRIAS BRANCAS DE ALTO CONTRASTE NO ST.TABLE */
     div[data-testid="stTable"] table {
         border: 3px solid #ffffff !important;
         background-color: #113223 !important;
@@ -282,7 +272,7 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
         
     n = len(lista_jogadores)
     for i in range(n // 2):
-        st.session_state.confrontos_mm.append({"tipo": "normal", "j1": lista_jogadores[i], "j2": lista_jogadores[n - 1 - i]})
+        st.session_state.confrontos_mm.append({"id_original": str(i+1), "tipo": "normal", "j1": lista_jogadores[i], "j2": lista_jogadores[n - 1 - i]})
         st.session_state.placares_rodada_atual[str(i+1)] = [0, 0, 0, 0, 0, 0, False]
         
     st.session_state.hora_inicio_rodada = None
@@ -353,10 +343,10 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     components.html(html_mesa, height=425, scrolling=False)
 
 # -------------------------------------------------------------------------
-# 💾 MENU OPERADOR LATERAL (MODELO OCULTÁVEL)
+# 💾 MENU OPERADOR LATERAL
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnico")
+    st.markdown("## ⚙️ Gestão Técnica")
     senha_inserida = st.text_input("Chave Master:", type="password")
     is_admin = (senha_inserida == CHAVE_ADMINISTRADOR)
     
@@ -438,14 +428,23 @@ with aba_arena:
         
         elif st.session_state.em_matamata:
             st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
-            for idx, c in enumerate(st.session_state.confrontos_mm):
+            
+            # Força visual: Se for a fase final, ordena para a Final vir estritamente primeiro no desenho da tela
+            lista_confrontos_renderizada = st.session_state.confrontos_mm
+            if st.session_state.fase_matamata == "FINAL E TERCEIRO":
+                lista_confrontos_renderizada = sorted(st.session_state.confrontos_mm, key=lambda x: 0 if x["tipo"] == "final" else 1)
+
+            for idx, c in enumerate(lista_confrontos_renderizada):
                 j1, j2 = c["j1"], c["j2"]
-                m_str = str(idx + 1)
+                m_str = c["id_original"]
                 p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                 
-                label_mesa = f"MESA {m_str} - {st.session_state.fase_matamata}"
-                if c["tipo"] == "final": label_mesa = "👑 MESA 1: GRANDE FINAL (MAIOR ÊNFASE)"
-                if c["tipo"] == "3place": label_mesa = "🥉 MESA 2: DISPUTA DE TERCEIRO LUGAR"
+                if c["tipo"] == "final": 
+                    label_mesa = "🥇 MESA 1: GRANDE FINAL"
+                elif c["tipo"] == "3place": 
+                    label_mesa = "🥉 MESA 2: DISPUTA DE TERCEIRO LUGAR"
+                else:
+                    label_mesa = f"MESA {m_str} - {st.session_state.fase_matamata}"
                 
                 st.write(f"**{label_mesa}**")
                 desenhar_mesa_planta_baixa(j1, j2, m_str, p[0], p[2], p[4], p[1], p[3], p[5])
@@ -513,9 +512,8 @@ with aba_arena:
                     vencedores = []
                     perdedores = []
                     
-                    # Processar os resultados da rodada mata-mata corrente
-                    for idx, c in enumerate(st.session_state.confrontos_mm):
-                        m_str = str(idx + 1)
+                    for c in st.session_state.confrontos_mm:
+                        m_str = c["id_original"]
                         p = st.session_state.placares_rodada_atual.get(m_str, [0,0,0,0,0,0,False])
                         
                         if p[0] >= p[1]:
@@ -527,11 +525,9 @@ with aba_arena:
                             vencedores.append(win)
                             perdedores.append(los)
                         elif c["tipo"] == "final":
-                            # Processa Mesa 1 (Final)
                             st.session_state.campeao = win
                             st.session_state.vice_campeao = los
                         elif c["tipo"] == "3place":
-                            # Processa Mesa 2 (Disputa de 3º)
                             st.session_state.terceiro_lugar = win
                             st.session_state.quarto_lugar = los
                     
@@ -543,14 +539,13 @@ with aba_arena:
                     elif fase_atual == "QUARTAS":
                         iniciar_fase_matamata(vencedores, "SEMIFINAL")
                     elif fase_atual == "SEMIFINAL":
-                        # 🏛️ INVERSÃO PROJETADA: Agora a Final fica no topo (Mesa 1) e o Terceiro fica abaixo (Mesa 2)
                         st.session_state.fase_matamata = "FINAL E TERCEIRO"
                         st.session_state.confrontos_mm = [
-                            {"tipo": "final", "j1": vencedores[0], "j2": vencedores[1]},
-                            {"tipo": "3place", "j1": perdedores[0], "j2": perdedores[1]}
+                            {"id_original": "1", "tipo": "final", "j1": vencedores[0], "j2": vencedores[1]},
+                            {"id_original": "2", "tipo": "3place", "j1": perdedores[0], "j2": perdedores[1]}
                         ]
-                        st.session_state.placares_rodada_atual["1"] = [0,0,0,0,0,0,False] # Mesa 1 - Final
-                        st.session_state.placares_rodada_atual["2"] = [0,0,0,0,0,0,False] # Mesa 2 - 3º Lugar
+                        st.session_state.placares_rodada_atual["1"] = [0,0,0,0,0,0,False] 
+                        st.session_state.placares_rodada_atual["2"] = [0,0,0,0,0,0,False] 
                     elif fase_atual == "FINAL E TERCEIRO":
                         if st.session_state.campeao:
                             registro = {
@@ -574,7 +569,7 @@ with aba_arena:
 
 # --- ABA 2: CLASSIFICAÇÃO GERAL AO VIVO ---
 with aba_tabela:
-    st.markdown("### 📊 Tabela de Classificação Atualizada")
+    st.markdown("### 📊 Tabela de Classificação Updated")
     if st.session_state.classificacao is not None:
         df_rank = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
         st.table(df_rank)
