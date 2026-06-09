@@ -54,6 +54,8 @@ st.markdown("""
         color: #ffffff !important;
         background-color: #07140f !important;
         border: 1px solid #1c4234 !important;
+        text-align: center !important;
+        font-weight: bold !important;
     }
     
     div[data-testid="stNumberInput"] input {
@@ -65,7 +67,7 @@ st.markdown("""
         font-size: 1.1rem !important;
         height: 35px !important;
     }
-    div[data-testid="stNumberInput"] label {
+    div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
         color: #a0c0b5 !important;
         font-size: 0.8rem !important;
     }
@@ -278,7 +280,7 @@ def iniciar_fase_matamata(lista_jogadores, nome_fase):
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-# --- DISPARADOR DE ATUALIZAÇÃO REFORMULADO ---
+# --- DISPARADOR DE ATUALIZAÇÃO ---
 def disparar_atualizacao_placar(m_str, j1, j2):
     sem = st.session_state.get("semente_reset", 1)
     s1 = st.session_state[f"dir_s1_{m_str}_r{sem}"]
@@ -286,26 +288,24 @@ def disparar_atualizacao_placar(m_str, j1, j2):
     
     p_antigo = st.session_state.placares_rodada_atual.get(m_str, [0, 0, 0, 0, 0, 0, False])
     
-    # Define os sufixos de chave para evitar herança fantasma do Streamlit
-    sufixo_tipo = f"2x0j1" if (s1==2 and s2==0) else (f"2x0j2" if (s2==2 and s1==0) else "2x1")
-    
-    if sufixo_tipo == "2x0j1":
+    if (s1 == 2 and s2 == 0):
         t1 = 72
-        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}_{sufixo_tipo}", p_antigo[3])
+        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}_2x0j1", p_antigo[3])
         if t2 > 46: t2 = 46
-    elif sufixo_tipo == "2x0j2":
+    elif (s2 == 2 and s1 == 0):
         t2 = 72
-        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}_{sufixo_tipo}", p_antigo[2])
+        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x0j2", p_antigo[2])
         if t1 > 46: t1 = 46
     else:
-        # No cenário 2x1, busca o valor digitado nos campos dedicados do 2x1. 
-        # Se for a primeira vez que entra no 2x1, atribui os mínimos regulamentares automáticos para edição.
-        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}_{sufixo_tipo}", 48 if s1==2 else 24)
-        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}_{sufixo_tipo}", 48 if s2==2 else 24)
+        # Modo 2x1 Dinâmico: Lê a String digitada na tela em branco
+        t1_raw = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x1", "")
+        t2_raw = st.session_state.get(f"dir_t2_{m_str}_r{sem}_2x1", "")
         
-        # Proteção básica para impedir que fique grudado em 72 se veio do 2x0
-        if t1 == 72: t1 = 48
-        if t2 == 72: t2 = 48
+        try: t1 = int(t1_raw) if t1_raw.strip() != "" else 0
+        except ValueError: t1 = 0
+            
+        try: t2 = int(t2_raw) if t2_raw.strip() != "" else 0
+        except ValueError: t2 = 0
 
     f1 = st.session_state.get(f"dir_f1_{m_str}_r{sem}", p_antigo[4])
     f2 = st.session_state.get(f"dir_f2_{m_str}_r{sem}", p_antigo[5])
@@ -349,7 +349,7 @@ def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
     """
     components.html(html_mesa, height=425, scrolling=False)
 
-# --- AUXILIAR DE PREENCHIMENTO DE FORMULÁRIO BLINDADO ---
+# --- AUXILIAR DE PREENCHIMENTO EM BRANCO SE 2X1 ---
 def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
     s1, s2, t1, t2, f1, f2 = p[0], p[1], p[2], p[3], p[4], p[5]
@@ -365,33 +365,30 @@ def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
     
     with c2:
         if not jogo_encerrado:
-            st.warning("⚠️ Aguardando a definição dos Sets para liberar Tentos e Flores.")
+            st.warning("⚠️ Definir Sets para liberar os Tentos.")
         else:
             st.markdown("### 🪙 Tentos (Passo 2)")
             
-            # CASO 1: Vencedor por 2x0 (Jogador 1)
+            # CASO 1: Vencedor por 2x0 seco (Jogador 1)
             if s1_in == 2 and s2_in == 0:
-                st.info(f"💡 {j1} venceu por 2x0. Tentos travados em 72.")
+                st.info(f"💡 {j1} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j1}", 72, 72, 72, key=f"dir_t1_{m}_r{sem_id}_2x0j1", disabled=True)
                 st.number_input(f"Tentos - {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_r{sem_id}_2x0j1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
             
-            # CASO 2: Vencedor por 2x0 (Jogador 2)
+            # CASO 2: Vencedor por 2x0 seco (Jogador 2)
             elif s2_in == 2 and s1_in == 0:
                 st.number_input(f"Tentos - {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_r{sem_id}_2x0j2", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                st.info(f"💡 {j2} venceu por 2x0. Tentos travados em 72.")
+                st.info(f"💡 {j2} 2x0. Fixo 72.")
                 st.number_input(f"Tentos - {j2}", 72, 72, 72, key=f"dir_t2_{m}_r{sem_id}_2x0j2", disabled=True)
                 
-            # CASO 3: Placar de 2x1 (Chaves separadas impossibilitam reter os 72 do estado anterior)
+            # CASO 3: Cenário 2x1 solicitado: Traz caixas de texto Totalmente VAZIAS!
             else:
-                # Caso venha direto do 2x0, força o reset matemático para os mínimos adequados do 2x1
-                t1_def = 48 if (int(t1) == 72 or int(t1) == 0) else int(t1)
-                t2_def = 48 if (int(t2) == 72 or int(t2) == 0) else int(t2)
+                # Se na memória interna já tem o valor salvo do banco, ele converte para texto, senão deixa "" (vazio)
+                t1_val_str = "" if (t1 == 72 or t1 == 0) else str(t1)
+                t2_val_str = "" if (t2 == 72 or t2 == 0) else str(t2)
                 
-                if s1_in == 2 and t1_def < 48: t1_def = 48
-                if s2_in == 2 and t2_def < 48: t2_def = 48
-                
-                st.number_input(f"Tentos - {j1}", 0, 72, t1_def, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                st.number_input(f"Tentos - {j2}", 0, 72, t2_def, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                st.text_input(f"Digite Tentos - {j1}", value=t1_val_str, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
+                st.text_input(f"Digite Tentos - {j2}", value=t2_val_str, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Em branco - Digite...")
             
             st.markdown("### 🌸 Flores (Passo 3)")
             st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
@@ -531,7 +528,7 @@ with aba_arena:
                                 if not (s1 == 2 or s2 == 2):
                                     st.error(f"❌ Erro na Mesa {m_c}: Partida inacabada! Alguém precisa ter 2 sets."); erro_validacao = True
                                 
-                                # Verificação rígida de mínimos regulamentares do 2x1
+                                # Verificação rígida dos mínimos do 2x1 obtidos do text_input
                                 if s1 == 2 and s2 == 1:
                                     if t1 < 48: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 2 Sets ({j1}) precisa ter no mínimo 48 tentos!"); erro_validacao = True
                                     if t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: No placar de 2x1, quem fez 1 Set ({j2}) precisa ter no mínimo 24 tentos!"); erro_validacao = True
