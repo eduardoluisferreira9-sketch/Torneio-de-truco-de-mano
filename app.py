@@ -109,6 +109,20 @@ st.markdown("""
         font-size: 1.1rem !important;
     }
     
+    /* Estilo específico para botões de ação menor (excluir/editar) */
+    div.botao-excluir > button {
+        background-color: #8b0000 !important;
+        color: #ffffff !important;
+        border: 1px solid #ff0000 !important;
+        font-size: 0.9rem !important;
+    }
+    div.botao-editar > button {
+        background-color: #1c4234 !important;
+        color: #ffffff !important;
+        border: 1px solid #d4af37 !important;
+        font-size: 0.9rem !important;
+    }
+    
     .cronometro-box { 
         background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
         text-align: center;
@@ -267,6 +281,7 @@ if "jogadores" not in st.session_state:
     st.session_state.placares_rodada_atual = {}
     st.session_state.semente_reset = 1
     st.session_state.nome_torneio = "Torneio de Truco"
+    st.session_state.jogador_sendo_editado = None
 
 carregar_estado_do_disco()
 
@@ -482,15 +497,64 @@ with aba_arena:
     if not st.session_state.torneio_iniciado:
         st.markdown("### 🎮 Inscrições de Competidores")
         nome_t = st.text_input("Nome do Evento:", value="Torneio de Truco do CTG")
+        
         if is_admin:
-            with st.form("cad", clear_on_submit=True):
-                nj = st.text_input("Nome do Competidor:")
-                if st.form_submit_button("➕ Cadastrar") and nj:
-                    st.session_state.jogadores.append(nj.strip())
-                    salvar_estado_no_disco(); st.rerun()
+            # Painel condicional de Cadastro ou Edição
+            if st.session_state.get("jogador_sendo_editado") is not None:
+                idx_edit = st.session_state.jogador_sendo_editado
+                nome_antigo = st.session_state.jogadores[idx_edit]
+                st.warning(f"✍️ Editando o competidor: **{nome_antigo}**")
+                
+                with st.form("form_edicao"):
+                    novo_nome = st.text_input("Corrigir Nome do Competidor:", value=nome_antigo)
+                    col_b1, col_b2 = st.columns(2)
+                    with col_b1:
+                        if st.form_submit_button("💾 Salvar Alteração") and novo_nome.strip():
+                            st.session_state.jogadores[idx_edit] = novo_nome.strip()
+                            st.session_state.jogador_sendo_editado = None
+                            salvar_estado_no_disco(); st.rerun()
+                    with col_b2:
+                        if st.form_submit_button("❌ Cancelar"):
+                            st.session_state.jogador_sendo_editado = None
+                            st.rerun()
+            else:
+                with st.form("cad", clear_on_submit=True):
+                    nj = st.text_input("Nome do Competidor:")
+                    if st.form_submit_button("➕ Cadastrar") and nj:
+                        st.session_state.jogadores.append(nj.strip())
+                        salvar_estado_no_disco(); st.rerun()
+                        
         st.write(f"**Inscritos ({len(st.session_state.jogadores)}):**")
-        st.info(", ".join(st.session_state.jogadores) if st.session_state.jogadores else "Vazio.")
+        
+        # Lista Avançada de Gestão de Competidores (Apenas antes de iniciar o Torneio)
+        if st.session_state.jogadores:
+            if is_admin:
+                st.markdown("<p style='font-size:0.9rem; color:#a0c0b5 !important;'>🔧 Controles de Organizador:</p>", unsafe_allow_html=True)
+                for idx, jogador in enumerate(st.session_state.jogadores):
+                    c_nome, c_edit, c_excluir = st.columns([6, 1.5, 1.5])
+                    with c_nome:
+                        st.markdown(f"🔹 **{jogador}**")
+                    with c_edit:
+                        st.markdown('<div class="botao-editar">', unsafe_allow_html=True)
+                        if st.button(f"✏️ Editar", key=f"btn_edit_{idx}"):
+                            st.session_state.jogador_sendo_editado = idx
+                            st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    with c_excluir:
+                        st.markdown('<div class="botao-excluir">', unsafe_allow_html=True)
+                        if st.button(f"🗑️ Excluir", key=f"btn_del_{idx}"):
+                            st.session_state.jogadores.pop(idx)
+                            if st.session_state.jogador_sendo_editado == idx:
+                                st.session_state.jogador_sendo_editado = None
+                            salvar_estado_no_disco(); st.rerun()
+                        st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.info(", ".join(st.session_state.jogadores))
+        else:
+            st.info("Nenhum competidor cadastrado até o momento.")
+            
         if is_admin and len(st.session_state.jogadores) >= 4:
+            st.markdown("---")
             if st.button("🃏 DISPARAR TORNEIO"):
                 st.session_state.nome_torneio = nome_t
                 st.session_state.classificacao = pd.DataFrame({'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0}).set_index('Jogador')
@@ -500,7 +564,6 @@ with aba_arena:
         if st.session_state.campeao:
             st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
             
-            # Sanitização estrita das strings de texto
             champ = str(st.session_state.campeao)
             vice = str(st.session_state.vice_campeao)
             third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
@@ -509,47 +572,38 @@ with aba_arena:
             rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
             rei_flor_val = int(st.session_state.classificacao['Flores'].max())
 
-            # CONSTRUÇÃO DO IFRAME ISOLADO COM COMPONENTS.HTML
             html_iframe_podio = f"""
             <div style="background-color: #0d231a; padding: 10px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; box-sizing: border-box;">
-                
                 <div style="display: flex; align-items: flex-end; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 20px auto;">
-                    
                     <div style="flex: 1; background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070); height: 210px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 20px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e0e0e0; box-sizing: border-box;">
                         <p style="font-size: 3.2rem; font-weight: 900; margin: 0; line-height: 1; color: #111111;">2º</p>
                         <div style="font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {vice}</div>
                         <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #222222;">🥈 Vice-Campeão</div>
                     </div>
-                    
                     <div style="flex: 1; background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312); height: 270px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 10px; border: 4px solid #ffffff; box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7); box-sizing: border-box;">
                         <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #000000;">1º</p>
                         <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👑 {champ}</div>
                         <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #403000;">Rei do Truco / Campeão</div>
                     </div>
-                    
                     <div style="flex: 1; background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18); height: 170px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 15px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e69d5e; box-sizing: border-box;">
                         <p style="font-size: 2.8rem; font-weight: 900; margin: 0; line-height: 1; color: #ffffff;">3º</p>
                         <div style="font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin: 10px 0 5px 0; color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {third}</div>
                         <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #f0f0f0;">🥉 3º Colocado</div>
                     </div>
                 </div>
-                
                 <div style="display: flex; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 10px auto;">
                     <div style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0px 8px 20px rgba(0,0,0,0.5);">
                         <h5 style="margin:0; color:#d4af37; font-weight:bold; font-size: 0.85rem; text-transform: uppercase;">🏅 4º Colocado</h5>
                         <h3 style="margin:8px 0 0 0; font-weight:900; font-size:1.3rem; color:#ffffff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">👤 {fourth}</h3>
                     </div>
-                    
                     <div style="flex: 1; background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4); border: 2px solid #ffffff; border-radius: 15px; padding: 15px; text-align: center; box-shadow: 0px 10px 25px rgba(255,105,180,0.2);">
                         <h5 style="margin:0; color:#ffffff; font-weight:900; text-transform:uppercase; font-size: 0.85rem;">🌸 Maior Cantador de Flor</h5>
                         <h3 style="margin:5px 0 2px 0; font-weight:900; font-size:1.4rem; color:#ffffff; text-shadow:2px 2px 4px rgba(0,0,0,0.5); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🌸 {rei_flor_nome}</h3>
                         <p style="margin:0; font-weight:bold; color:#ffe066; font-size:0.85rem;">Cantou {rei_flor_val} flores!</p>
                     </div>
                 </div>
-
             </div>
             """
-            
             components.html(html_iframe_podio, height=520, scrolling=False)
             
             if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
