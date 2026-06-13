@@ -92,8 +92,14 @@ st.markdown("""
         font-size: 1.1rem !important;
         height: 35px !important;
     }
+
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+        background-color: #07140f !important;
+        border: 2px solid #d4af37 !important;
+        color: #ffffff !important;
+    }
     
-    div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
+    div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label, div[data-testid="stSelectbox"] label {
         color: #ffffff !important;
         font-size: 0.95rem !important;
         font-weight: bold !important;
@@ -109,7 +115,6 @@ st.markdown("""
         font-size: 1.1rem !important;
     }
     
-    /* Estilo específico para botões de ação menor (excluir/editar) */
     div.botao-excluir > button {
         background-color: #8b0000 !important;
         color: #ffffff !important;
@@ -217,6 +222,7 @@ def salvar_estado_no_disco():
         "cronometro_ativo": st.session_state.cronometro_ativo,
         "historico_rodadas": st.session_state.historico_rodadas,
         "nome_torneio": st.session_state.get("nome_torneio", "Torneio de Truco"),
+        "preferencia_eliminatoria": st.session_state.get("preferencia_eliminatoria", "Automático pelo sistema"),
         "em_matamata": st.session_state.em_matamata,
         "fase_matamata": st.session_state.fase_matamata,
         "confrontos_mm": st.session_state.confrontos_mm,
@@ -252,8 +258,8 @@ def carregar_estado_do_disco():
             st.session_state.historico_rodadas = estado.get("historico_rodadas", {})
             st.session_state.placares_rodada_atual = estado.get("placares_rodada_atual", {})
             st.session_state.semente_reset = estado.get("semente_reset", 1)
-            if estado.get("nome_torneio"):
-                st.session_state.nome_torneio = estado.get("nome_torneio")
+            st.session_state.nome_torneio = estado.get("nome_torneio", "Torneio de Truco")
+            st.session_state.preferencia_eliminatoria = estado.get("preferencia_eliminatoria", "Automático pelo sistema")
             if estado.get("classificacao") is not None:
                 st.session_state.classificacao = pd.DataFrame.from_dict(estado["classificacao"], orient="index")
             if estado.get("hora_inicio_rodada"):
@@ -281,6 +287,7 @@ if "jogadores" not in st.session_state:
     st.session_state.placares_rodada_atual = {}
     st.session_state.semente_reset = 1
     st.session_state.nome_torneio = "Torneio de Truco"
+    st.session_state.preferencia_eliminatoria = "Automático pelo sistema"
     st.session_state.jogador_sendo_editado = None
 
 carregar_estado_do_disco()
@@ -472,7 +479,32 @@ with st.sidebar:
     st.markdown("## ⚙️ Gestão Técnico")
     senha = st.text_input("Chave Master:", type="password")
     is_admin = (senha == CHAVE_ADMINISTRADOR)
+    
     if is_admin:
+        # MENU DINÂMICO PARA MUDAR A PREFERÊNCIA COM O TORNEIO EM ANDAMENTO
+        st.markdown("---")
+        st.markdown("### 🚀 Fase Inicial do Mata-Mata")
+        
+        opcoes_fase = ["Automático pelo sistema", "Oitavas de Final", "Quartas de Final", "Semifinal"]
+        fase_atual = st.session_state.get("preferencia_eliminatoria", "Automático pelo sistema")
+        if fase_atual not in opcoes_fase: fase_atual = "Automático pelo sistema"
+        idx_atual = opcoes_fase.index(fase_atual)
+        
+        pref_elim_sidebar = st.selectbox(
+            "Iniciar eliminatória em:",
+            opcoes_fase,
+            index=idx_atual,
+            key="pref_sidebar_admin",
+            help="Selecione qual fase eliminatória deseja disparar após fechar a 5ª rodada. O sistema cortará a tabela dinamicamente."
+        )
+        
+        # Se mudar na sidebar, atualiza imediatamente no estado e salva no disco
+        if pref_elim_sidebar != st.session_state.preferencia_eliminatoria:
+            st.session_state.preferencia_eliminatoria = pref_elim_sidebar
+            salvar_estado_no_disco()
+            st.toast(f"Fase alterada para: {pref_elim_sidebar}!", icon="⚙️")
+        
+        st.markdown("---")
         if st.button("⏱️ Disparar Rodada (45m)"):
             st.session_state.hora_inicio_rodada = datetime.now()
             st.session_state.cronometro_ativo = True
@@ -496,10 +528,18 @@ aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "�
 with aba_arena:
     if not st.session_state.torneio_iniciado:
         st.markdown("### 🎮 Inscrições de Competidores")
-        nome_t = st.text_input("Nome do Evento:", value="Torneio de Truco do CTG")
+        
+        c_nome, c_pref = st.columns([2, 1])
+        with c_nome:
+            nome_t = st.text_input("Nome do Evento:", value="Torneio de Truco do CTG")
+        with c_pref:
+            pref_elim = st.selectbox(
+                "🚀 Forçar Início do Mata-Mata em:", 
+                ["Automático pelo sistema", "Oitavas de Final", "Quartas de Final", "Semifinal"],
+                help="Se escolher Automático, o sistema decide pelo número de inscritos. Caso contrário, ele vai pular direto para a fase escolhida pegando os melhores da tabela ao fim da 5ª rodada."
+            )
         
         if is_admin:
-            # Painel condicional de Cadastro ou Edição
             if st.session_state.get("jogador_sendo_editado") is not None:
                 idx_edit = st.session_state.jogador_sendo_editado
                 nome_antigo = st.session_state.jogadores[idx_edit]
@@ -526,7 +566,6 @@ with aba_arena:
                         
         st.write(f"**Inscritos ({len(st.session_state.jogadores)}):**")
         
-        # Lista Avançada de Gestão de Competidores (Apenas antes de iniciar o Torneio)
         if st.session_state.jogadores:
             if is_admin:
                 st.markdown("<p style='font-size:0.9rem; color:#a0c0b5 !important;'>🔧 Controles de Organizador:</p>", unsafe_allow_html=True)
@@ -557,6 +596,7 @@ with aba_arena:
             st.markdown("---")
             if st.button("🃏 DISPARAR TORNEIO"):
                 st.session_state.nome_torneio = nome_t
+                st.session_state.preferencia_eliminatoria = pref_elim
                 st.session_state.classificacao = pd.DataFrame({'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0}).set_index('Jogador')
                 st.session_state.torneio_iniciado = True
                 gerar_rodada_web(); st.rerun()
@@ -640,6 +680,18 @@ with aba_arena:
             if not st.session_state.em_matamata:
                 st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
                 
+                # --- BOTÃO DE REFAZER SORTEIO ---
+                if is_admin:
+                    ja_tem_placar = any(p[6] for p in st.session_state.placares_rodada_atual.values())
+                    if not ja_tem_placar:
+                        st.markdown("##### 🎲 Problema com jogos repetidos?")
+                        if st.button("🔄 Refazer Sorteio desta Rodada", type="secondary"):
+                            gerar_rodada_web()
+                            st.success("Confrontos re-sorteados com sucesso!")
+                            st.rerun()
+                    else:
+                        st.info("💡 Sorteio trancado: Resultados parciais já foram inseridos nas mesas.")
+                
                 for j1, j2 in st.session_state.confrontos:
                     if j2 == "CHAPÉU (Folga)":
                         st.markdown(f"""
@@ -656,7 +708,6 @@ with aba_arena:
                     if j2 != "CHAPÉU (Folga)":
                         m = str(cont)
                         p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
-                        
                         st.markdown(f'<div class="titulo-mesa-destaque">🎰 MESA {m}</div>', unsafe_allow_html=True)
                         
                         if is_admin:
@@ -710,12 +761,23 @@ with aba_arena:
                             reconstruir_classificacao_global()
                             st.session_state.rodada_atual += 1
                             
-                            if st.session_state.rodada_atual <= 5: gerar_rodada_web()
+                            if st.session_state.rodada_atual <= 5: 
+                                gerar_rodada_web()
                             else:
+                                pref = st.session_state.get("preferencia_eliminatoria", "Automático pelo sistema")
                                 n_in = len(st.session_state.jogadores)
-                                f_n = "OITAVAS DE FINAL" if n_in > 16 else ("QUARTAS DE FINAL" if n_in >= 8 else "SEMIFINAL")
+                                
+                                # SISTEMÁTICA INTELIGENTE CONFORME ESCOLHA DO ORGANIZADOR
+                                if pref == "Automático pelo sistema":
+                                    f_n = "OITAVAS DE FINAL" if n_in > 16 else ("QUARTAS DE FINAL" if n_in >= 8 else "SEMIFINAL")
+                                else:
+                                    f_n = pref
+                                
+                                # Define quantos se classificam baseado na fase alvo
+                                se_classificam = 16 if f_n == "OITAVAS DE FINAL" else (8 if f_n == "QUARTAS DE FINAL" else 4)
+                                
                                 dv = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
-                                iniciar_fase_matamata(list(dv.index[:16 if n_in>16 else (8 if n_in>=8 else 4)]), f_n)
+                                iniciar_fase_matamata(list(dv.index[:se_classificam]), f_n)
                             st.rerun()
 
             # FASE 2: MATA-MATAS ATÉ A FINAL
@@ -730,12 +792,9 @@ with aba_arena:
                     j1, j2 = c["j1"], c["j2"]
                     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
                     
-                    if c["tipo"] == "final":
-                        tit = "🏆 GRANDE FINAL DO TORNEIO"
-                    elif c["tipo"] == "3place":
-                        tit = "🥉 DISPUTA DE 3º E 4º LUGAR"
-                    else:
-                        tit = f"⚔️ {st.session_state.fase_matamata} - MESA {m}"
+                    if c["tipo"] == "final": tit = "🏆 GRANDE FINAL DO TORNEIO"
+                    elif c["tipo"] == "3place": tit = "🥉 DISPUTA DE 3º E 4º LUGAR"
+                    else: tit = f"⚔️ {st.session_state.fase_matamata} - MESA {m}"
                     
                     st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
                     
@@ -773,8 +832,12 @@ with aba_arena:
                                 elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
 
                             f_at = st.session_state.fase_matamata
-                            if f_at == "OITAVAS DE FINAL": iniciar_fase_matamata(venc, "QUARTAS DE FINAL")
-                            elif f_at == "QUARTAS DE FINAL": iniciar_fase_matamata(venc, "SEMIFINAL")
+                            
+                            # ÁRVORE DE TRANSIÇÃO DO MATA-MATA
+                            if f_at == "OITAVAS DE FINAL": 
+                                iniciar_fase_matamata(venc, "QUARTAS DE FINAL")
+                            elif f_at == "QUARTAS DE FINAL": 
+                                iniciar_fase_matamata(venc, "SEMIFINAL")
                             elif f_at == "SEMIFINAL":
                                 limpar_placares_memoria()
                                 st.session_state.fase_matamata = "FINAL E TERCEIRO"
@@ -814,7 +877,7 @@ with aba_tabela:
                                 st.write(f"🥇 Controles {j1}")
                                 st.number_input(f"Sets ({j1})", 0, 2, int(dados["s1"]), key=f"ret_s1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                                 st.number_input(f"Tentos ({j1})", 0, 72, int(dados["t1"]), key=f"ret_t1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Flores ({j1})", 0, 20, int(dados["f1"]), key=f"ret_f1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                               _in = st.number_input(f"Flores ({j1})", 0, 20, int(dados["f1"]), key=f"ret_f1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                             with col_e2:
                                 st.write(f"🥈 Controles {j2}")
                                 st.number_input(f"Sets ({j2})", 0, 2, int(dados["s2"]), key=f"ret_s2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
