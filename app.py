@@ -211,8 +211,10 @@ def salvar_estado_no_disco():
         "confrontos": st.session_state.confrontos,
         "jogadores_no_chapeu": list(st.session_state.jogadores_no_chapeu),
         "hora_inicio_rodada": st.session_state.hora_inicio_rodada.isoformat() if st.session_state.hora_inicio_rodada else None,
+        "duracao_rodada_minutos": st.session_state.get("duracao_rodada_minutos", 45),
         "cronometro_ativo": st.session_state.cronometro_ativo,
         "historico_rodadas": st.session_state.historico_rodadas,
+        "historico_matamata": st.session_state.get("historico_matamata", {}),
         "nome_torneio": st.session_state.get("nome_torneio", "Torneio de Truco"),
         "em_matamata": st.session_state.em_matamata,
         "fase_matamata": st.session_state.fase_matamata,
@@ -249,10 +251,12 @@ def carregar_estado_do_disco():
             st.session_state.terceiro_lugar = estado.get("terceiro_lugar", None)
             st.session_state.quarto_lugar = estado.get("quarto_lugar", None)
             st.session_state.historico_rodadas = estado.get("historico_rodadas", {})
+            st.session_state.historico_matamata = estado.get("historico_matamata", {})
             st.session_state.placares_rodada_atual = estado.get("placares_rodada_atual", {})
             st.session_state.semente_reset = estado.get("semente_reset", 1)
             st.session_state.aguardando_escolha_mm = estado.get("aguardando_escolha_mm", False)
             st.session_state.flores_acumuladas_matamata = estado.get("flores_acumuladas_matamata", {})
+            st.session_state.duracao_rodada_minutos = estado.get("duracao_rodada_minutos", 45)
             if estado.get("nome_torneio"):
                 st.session_state.nome_torneio = estado.get("nome_torneio")
             if estado.get("classificacao") is not None:
@@ -269,6 +273,7 @@ if "jogadores" not in st.session_state:
     st.session_state.confrontos = []
     st.session_state.jogadores_no_chapeu = set()
     st.session_state.hora_inicio_rodada = None
+    st.session_state.duracao_rodada_minutos = 45
     st.session_state.cronometro_ativo = False
     st.session_state.em_matamata = False
     st.session_state.fase_matamata = ""
@@ -278,6 +283,7 @@ if "jogadores" not in st.session_state:
     st.session_state.terceiro_lugar = None
     st.session_state.quarto_lugar = None
     st.session_state.historico_rodadas = {}
+    st.session_state.historico_matamata = {}
     st.session_state.placares_rodada_atual = {}
     st.session_state.semente_reset = 1
     st.session_state.nome_torneio = "Torneio de Truco"
@@ -288,13 +294,11 @@ if "jogadores" not in st.session_state:
 carregar_estado_do_disco()
 
 def reconstruir_classificacao_global():
-    # 1. Recria a tabela base zerada com todos os jogadores inscritos
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
         'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0
     }).set_index('Jogador')
     
-    # 2. Computa a fase de classificação (As 5 Rodadas) - REVISADO E BLINDADO
     for r_num, mesas in list(st.session_state.historico_rodadas.items()):
         for m_id, dados in mesas.items():
             if dados.get("is_chapeu", False):
@@ -302,28 +306,22 @@ def reconstruir_classificacao_global():
                     st.session_state.classificacao.loc[dados["j1"], ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
             else:
                 j1, j2 = dados["j1"], dados["j2"]
-                
                 if j1 in st.session_state.classificacao.index and j2 in st.session_state.classificacao.index:
-                    # Coleta explícita e conversão limpa para evitar perdas ou distorções de strings
                     s1 = int(dados.get("s1", 0))
                     s2 = int(dados.get("s2", 0))
                     t1 = int(dados.get("t1", 0))
                     t2 = int(dados.get("t2", 0))
-                    
-                    # CAPTURA MATEMÁTICA ISOLADA DAS FLORES DO HISTÓRICO
                     f1_gravado = int(dados.get("f1", 0))
                     f2_gravado = int(dados.get("f2", 0))
                     
                     s1_c = 3 if (s1 == 2 and s2 == 0) else s1
                     s2_c = 3 if (s2 == 2 and s1 == 0) else s2
-                    
                     v1 = 1 if s1 > s2 else 0
                     v2 = 1 if s2 > s1 else 0
                     
                     st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1_gravado]
                     st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2_gravado]
                 
-    # 3. 🌸 Acumula as flores do Mata-Mata de forma isolada e persistente
     if "flores_acumuladas_matamata" in st.session_state:
         for jogador, flores_mm in st.session_state.flores_acumuladas_matamata.items():
             if jogador in st.session_state.classificacao.index:
@@ -342,10 +340,8 @@ def ja_se_enfrentaram(j1, j2):
 
 def gerar_rodada_com_travas():
     limpar_placares_memoria()
-    
     lista_rodada = list(st.session_state.jogadores)
     random.shuffle(lista_rodada)
-
     st.session_state.confrontos = []
     
     if len(lista_rodada) % 2 != 0:
@@ -359,7 +355,6 @@ def gerar_rodada_com_travas():
     while len(lista_rodada) > 0:
         j1 = lista_rodada[0]
         par_encontrado = None
-        
         for idx in range(1, len(lista_rodada)):
             possivel_j2 = lista_rodada[idx]
             if not ja_se_enfrentaram(j1, possivel_j2):
@@ -367,7 +362,6 @@ def gerar_rodada_com_travas():
                 lista_rodada.pop(idx)
                 lista_rodada.pop(0)
                 break
-        
         if par_encontrado:
             pares_definidos.append((j1, par_encontrado))
         else:
@@ -381,7 +375,38 @@ def gerar_rodada_com_travas():
         st.session_state.confrontos.append((j1, j2))
         st.session_state.placares_rodada_atual[str(contador_mesa)] = [0, 0, 0, 0, 0, 0, False]
         contador_mesa += 1
+    st.session_state.hora_inicio_rodada = None
+    st.session_state.cronometro_ativo = False
+    salvar_estado_no_disco()
+
+def re_sortear_mata_mata_manual():
+    """Permite ao administrador re-embaralhar os confrontos da fase atual de Mata-Mata se julgar necessário"""
+    if not st.session_state.em_matamata or not st.session_state.confrontos_mm:
+        return
     
+    # Coleta todos os competidores ativos nesta fase específica do mata-mata
+    vivos = []
+    for c in st.session_state.confrontos_mm:
+        if c["j1"] != "CHAPÉU (Folga)": vivos.append(c["j1"])
+        if c["j2"] != "CHAPÉU (Folga)": vivos.append(c["j2"])
+    
+    limpar_placares_memoria()
+    random.shuffle(vivos)
+    
+    # Mantém o número original de slots/vagas da fase atual
+    st.session_state.confrontos_mm = []
+    idx_mesa = 1
+    n = len(vivos)
+    
+    # Se for uma rodada com número ímpar gerada artificialmente, ajusta
+    for i in range(n // 2):
+        id_m = str(idx_mesa)
+        j1 = vivos[i]
+        j2 = vivos[n-1-i]
+        st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": j1, "j2": j2})
+        st.session_state.placares_rodada_atual[id_m] = [0, 0, 0, 0, 0, 0, False]
+        idx_mesa += 1
+        
     st.session_state.hora_inicio_rodada = None
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
@@ -520,27 +545,40 @@ with st.sidebar:
     senha = st.text_input("Chave Master:", type="password")
     is_admin = (senha == CHAVE_ADMINISTRADOR)
     if is_admin:
-        if st.button("⏱️ Disparar Rodada (45m)"):
-            st.session_state.hora_inicio_rodada = datetime.now()
-            st.session_state.cronometro_ativo = True
-            salvar_estado_no_disco(); st.rerun()
-        if st.button("⏹️ Pausar Cronômetro"):
-            st.session_state.cronometro_ativo = False
-            salvar_estado_no_disco(); st.rerun()
+        # Seção do Cronômetro dinâmico (Disponível até o fim do torneio, incluindo mata-mata)
+        if st.session_state.torneio_iniciado and not st.session_state.campeao:
+            st.markdown("### ⏱️ Cronômetro da Rodada")
+            minutos_escolhidos = st.number_input("Duração da rodada (min):", min_value=5, max_value=120, value=int(st.session_state.get("duracao_rodada_minutos", 45)), step=5)
+            st.session_state.duracao_rodada_minutos = minutos_escolhidos
+            
+            if st.button("▶️ Iniciar/Disparar Tempo"):
+                st.session_state.hora_inicio_rodada = datetime.now()
+                st.session_state.cronometro_ativo = True
+                salvar_estado_no_disco()
+                st.rerun()
+            if st.button("⏹️ Pausar Cronômetro"):
+                st.session_state.cronometro_ativo = False
+                salvar_estado_no_disco()
+                st.rerun()
         
-        if st.session_state.torneio_iniciado and not st.session_state.em_matamata and not st.session_state.get("aguardando_escolha_mm", False):
+        # Botão Inteligente de Re-Sorteio (Funciona em Pontos Corridos e Mata-Mata)
+        if st.session_state.torneio_iniciado and not st.session_state.campeao and not st.session_state.get("aguardando_escolha_mm", False):
             st.markdown("---")
-            if st.button("🔄 Refazer Sorteio Desta Rodada"):
-                gerar_rodada_com_travas()
-                st.success("Rodada re-sorteada de forma aleatória com sucesso!")
+            st.markdown("🎲 **Ajuste de Confrontos**")
+            if st.button("🔄 Refazer Sorteio Desta Etapa"):
+                if not st.session_state.em_matamata:
+                    gerar_rodada_com_travas()
+                else:
+                    re_sortear_mata_mata_manual()
+                st.success("Rodada re-sorteada com sucesso!")
                 st.rerun()
                 
         st.markdown("---")
-        if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
-            if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUIVO_GALERIA)
-            st.success("Galeria de campeões resetada com sucesso!")
-            st.rerun()
-        if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)"):
+        st.markdown("⚠️ **Zona de Segurança**")
+        
+        # Confirmação de Reset Geral do Torneio Atual
+        confirma_reset_geral = st.checkbox("Aceito apagar o torneio atual em andamento", key="check_reset_geral")
+        if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)", disabled=not confirma_reset_geral):
             if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
             st.session_state.clear(); st.rerun()
 
@@ -687,12 +725,15 @@ with aba_arena:
                 st.warning("Aguardando o organizador definir o formato do mata-mata (Oitavas, Quartas ou Semi).")
 
         else:
+            # RENDERIZAÇÃO DO CRONÔMETRO (Ativo tanto na Fase de Pontos quanto no Mata-Mata)
             if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
-                tl = st.session_state.hora_inicio_rodada + timedelta(minutes=45)
+                duracao_min = st.session_state.get("duracao_rodada_minutos", 45)
+                tl = st.session_state.hora_inicio_rodada + timedelta(minutes=duracao_min)
                 tr = tl - datetime.now()
                 if tr.total_seconds() > 0:
-                    st.markdown(f'<div class="cronometro-box"><h2>⏱️ TEMPO RESTANTE: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h2></div>', unsafe_allow_html=True)
-                else: st.markdown('<div class="cronometro-box"><h2 style="color:red !important;">⏰ TEMPO ESGOTADO!</h2></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="cronometro-box"><h2>⏱️ TEMPO RESTANTE DA RODADA: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h2></div>', unsafe_allow_html=True)
+                else: 
+                    st.markdown('<div class="cronometro-box"><h2 style="color:red !important;">⏰ TEMPO ESGOTADO NA ARENA!</h2></div>', unsafe_allow_html=True)
 
             sem_id = st.session_state.get("semente_reset", 1)
 
@@ -737,9 +778,9 @@ with aba_arena:
                                 if not (s1 == 2 or s2 == 2):
                                     st.error(f"❌ Erro na Mesa {m_c}: Partida inacabada!"); erro_validacao = True
                                 if s1 == 2 and s2 == 1:
-                                    if t1 < 48 or t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido (Mínimos: 48 e 24 tentos)."); erro_validacao = True
+                                    if t1 < 48 or t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido."); erro_validacao = True
                                 elif s2 == 2 and s1 == 1:
-                                    if t2 < 48 or t1 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido (Mínimos: 48 e 24 tentos)."); erro_validacao = True
+                                    if t2 < 48 or t1 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido."); erro_validacao = True
                                 m_c += 1
                                 
                         if not erro_validacao:
@@ -756,7 +797,6 @@ with aba_arena:
                             
                             reconstruir_classificacao_global()
                             st.session_state.rodada_atual += 1
-                            
                             if st.session_state.rodada_atual <= 5: 
                                 gerar_rodada_com_travas()
                             else:
@@ -782,7 +822,7 @@ with aba_arena:
                     st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
                     
                     if j2 == "CHAPÉU (Folga)":
-                        st.success(f"💚 **{j1}** classificado automaticamente nesta chave por W.O. técnico (Folga de Emparelhamento).")
+                        st.success(f"💚 **{j1}** classificado automaticamente nesta chave por W.O. técnico.")
                     else:
                         if is_admin:
                             col_p_mm, col_e_mm = st.columns([2, 3])
@@ -807,24 +847,32 @@ with aba_arena:
                         if not erro_mm:
                             if "flores_acumuladas_matamata" not in st.session_state:
                                 st.session_state.flores_acumuladas_matamata = {}
+                            if "historico_matamata" not in st.session_state:
+                                st.session_state.historico_matamata = {}
+
+                            f_at = st.session_state.fase_matamata
+                            st.session_state.historico_matamata[f_at] = []
 
                             venc, perd = [], []
                             for c in st.session_state.confrontos_mm:
                                 p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
                                 
-                                # Acumulação protegida no dicionário do mata-mata
                                 if c["j1"] != "CHAPÉU (Folga)": 
                                     st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + int(p[4])
                                 if c["j2"] != "CHAPÉU (Folga)": 
                                     st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + int(p[5])
                                 
+                                st.session_state.historico_matamata[f_at].append({
+                                    "tipo": c["tipo"], "mesa": c["id_original"],
+                                    "j1": c["j1"], "j2": c["j2"],
+                                    "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]
+                                })
+
                                 w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
                                 if c["tipo"]=="normal": venc.append(w); perd.append(l)
                                 elif c["tipo"]=="final": st.session_state.campeao=w; st.session_state.vice_campeao=l
                                 elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
 
-                            f_at = st.session_state.fase_matamata
-                            
                             venc = [v for v in venc if v != "CHAPÉU (Folga)"]
                             perd = [p for p in perd if p != "CHAPÉU (Folga)"]
 
@@ -876,11 +924,33 @@ with aba_tabela:
         df_r = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
         st.table(df_r)
         
+        # 📌 HISTÓRICO VISUAL DAS ELIMINATÓRIAS (MATA-MATA)
+        hist_mm = st.session_state.get("historico_matamata", {})
+        if hist_mm:
+            st.markdown("---")
+            st.markdown("### 🔍 Histórico do Mata-Mata (Chaves Eliminatórias)")
+            fases_gravadas = list(hist_mm.keys())
+            fase_sel = st.selectbox("Selecione a Etapa do Mata-Mata para conferência:", fases_gravadas)
+            
+            if fase_sel:
+                st.write(f"📊 **Resultados Gravados - {fase_sel}:**")
+                for jogo in hist_mm[fase_sel]:
+                    j1, j2 = jogo["j1"], jogo["j2"]
+                    if j2 == "CHAPÉU (Folga)":
+                        st.markdown(f"🔹 **{j1}** avançou automaticamente por folga/W.O.")
+                    else:
+                        label_jogo = "Mesa " + jogo["mesa"]
+                        if jogo["tipo"] == "final": label_jogo = "🏆 GRANDE FINAL"
+                        elif jogo["tipo"] == "3place": label_jogo = "🥉 3º E 4º LUGAR"
+                        
+                        st.markdown(f"**{label_jogo}:** {j1} **{int(jogo['s1'])}s {int(jogo['t1'])}t** (🌸{int(jogo['f1'])}fl) _VS_ {j2} **{int(jogo['s2'])}s {int(jogo['t2'])}t** (🌸{int(jogo['f2'])}fl)")
+        
+        # SEÇÃO: AUDITORIA DAS 5 RODADAS INICIAIS
         if st.session_state.historico_rodadas:
             st.markdown("---")
-            st.markdown("### 🔍 Auditoria e Correção de Rodadas Passadas")
+            st.markdown("### 🔍 Auditoria e Correção de Rodadas Passadas (Fase de Grupos)")
             rodadas_concluidas = list(st.session_state.historico_rodadas.keys())
-            r_selecionada = st.selectbox("Escolha a Rodada:", rodadas_concluidas)
+            r_selecionada = st.selectbox("Escolha a Rodada da Fase de Grupos:", rodadas_concluidas)
             
             if r_selecionada:
                 mesas_salvas = st.session_state.historico_rodadas[r_selecionada]
@@ -906,9 +976,33 @@ with aba_tabela:
                             st.markdown(f"👉 **Placar Registrado:** {dados.get('s1',0)}s {dados.get('t1',0)}t (🌸{dados.get('f1',0)}fl)  **VS** {dados.get('s2',0)}s {dados.get('t2',0)}t (🌸{dados.get('f2',0)}fl)")
                         st.markdown("---")
 
-# --- ABA 3: GALERIA DE CAMPEÕES ---
+# --- ABA 3: GALERIA DE CAMPEÕES E EXCLUSÃO SELETIVA ---
 with aba_historico:
     st.markdown("### 📜 Galeria Tradicionalista de Campeões")
+    
+    # Gerenciador Seletivo Interno da Galeria (Painel do Admin)
+    if is_admin:
+        if os.path.exists(ARQUIVO_GALERIA):
+            try:
+                with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg_check = json.load(f)
+                if dg_check:
+                    st.markdown("#### 🛠️ Painel de Exclusão Seletiva (Exclusivo Técnico)")
+                    opcoes_torneios = [f"{idx} - {t.get('Torneio')} ({t.get('Data')}) -> Campeão: {t.get('Campeao')}" for idx, t in enumerate(dg_check)]
+                    torneio_para_deletar = st.selectbox("Selecione o registro específico para remover da história:", opcoes_torneios)
+                    
+                    c_confirma = st.checkbox("Confirmo que desejo deletar permanentemente APENAS este torneio selecionado", key="check_del_seletivo")
+                    
+                    if st.button("🗑️ Excluir Registro Selecionado", disabled=not c_confirma):
+                        idx_alvo = int(torneio_para_deletar.split(" - ")[0])
+                        dg_check.pop(idx_alvo)
+                        with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
+                            json.dump(dg_check, f, ensure_ascii=False, indent=4)
+                        st.success("Torneio removido com sucesso!")
+                        st.rerun()
+                    st.markdown("---")
+            except Exception: pass
+
+    # Exibição Tradicional dos Cards
     if os.path.exists(ARQUIVO_GALERIA):
         try:
             with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
