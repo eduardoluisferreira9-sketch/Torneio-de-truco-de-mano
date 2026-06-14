@@ -4,10 +4,6 @@ import pandas as pd
 import random
 import json
 import os
-import socket
-import requests 
-from PIL import Image 
-from io import BytesIO
 from datetime import datetime, timedelta
 
 # 🃏 CONFIGURAÇÃO DA PÁGINA
@@ -23,185 +19,173 @@ ARQUIVO_GALERIA = "galeria_campeoes.json"
 CHAVE_ADMINISTRADOR = "truco123"
 
 # ==========================================
-# 🖼️ BANCO DE DADOS DE IMAGENS VIA INTERNET
+# 🎨 IDENTIDADE VISUAL E GRADE DE TRANSMISSÃO (CSS)
 # ==========================================
-URL_BASE_IMAGENS = "https://raw.githubusercontent.com/seu-usuario/seu-repositorio/main/imagens"
-
-icone_pagina = "🃏" 
-try:
-    resposta = requests.get(f"{URL_BASE_IMAGENS}/baralho_espanhol.png", timeout=5)
-    if resposta.status_code == 200:
-        icone_pagina = Image.open(BytesIO(resposta.content))
-except Exception:
-    pass
-
-# 🛠️ ESTILIZAÇÃO CSS
 st.markdown("""
     <style>
-    .stApp { background-color: #0d231a; } 
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
     
-    section[data-testid="stSidebar"] {
-        background-color: #07140f;
-        border-right: 2px solid #1c4234;
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Montserrat', sans-serif;
+        background-color: #06150f;
     }
-    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2 { color: #d4af37; }
+    .stApp { background-color: #06150f; } 
     
+    /* Customização da Barra Lateral */
+    section[data-testid="stSidebar"] {
+        background-color: #030a07;
+        border-right: 2px solid #b89742;
+    }
+    section[data-testid="stSidebar"] h1, section[data-testid="stSidebar"] h2, section[data-testid="stSidebar"] h3 { 
+        color: #e5c158 !important;
+        font-weight: 900;
+    }
+    
+    /* Textos Gerais */
     h1, h2, h3, h4, h5, p, label, .stText, [data-testid="stMarkdownContainer"] p { 
         color: #ffffff !important; 
     }
     
     .titulo-passo-admin {
-        color: #ffffff !important;
-        font-weight: bold !important;
-        margin-top: 10px !important;
-        margin-bottom: 10px !important;
-    }
-    
-    div[data-testid="stNotification"] p {
-        color: #ffffff !important;
-        font-weight: bold !important;
-    }
-    
-    .titulo-mesa-destaque {
-        color: #d4af37 !important;
-        font-size: 1.6rem !important;
-        font-weight: bold !important;
-        border-left: 5px solid #d4af37;
-        padding-left: 10px;
-        margin-top: 20px;
-        margin-bottom: 10px;
+        color: #e5c158 !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
         text-transform: uppercase;
         letter-spacing: 1px;
+        margin: 10px 0 5px 0 !important;
     }
-    
-    div[data-testid="stTextInput"] input {
+
+    /* Inputs Customizados */
+    div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input {
         color: #ffffff !important;
-        background-color: #07140f !important;
-        border: 2px solid #d4af37 !important;
+        background-color: #0c241b !important;
+        border: 2px solid #b89742 !important;
+        border-radius: 6px !important;
         text-align: center !important;
         font-weight: bold !important;
-        font-size: 1.1rem !important;
+        font-size: 1.05rem !important;
     }
-    
-    div[data-testid="stNumberInput"] input {
-        color: #ffffff !important;
-        background-color: #07140f !important;
-        border: 2px solid #d4af37 !important;
-        text-align: center !important;
-        font-weight: bold !important;
-        font-size: 1.1rem !important;
-        height: 35px !important;
-    }
-    
     div[data-testid="stNumberInput"] label, div[data-testid="stTextInput"] label {
-        color: #ffffff !important;
-        font-size: 0.95rem !important;
-        font-weight: bold !important;
+        color: #a4c2b7 !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
     }
     
-    button[data-baseweb="tab"] { color: #a0c0b5 !important; }
-    button[data-baseweb="tab"][aria-selected="true"] { color: #d4af37 !important; font-weight: bold; }
-    
-    .stButton>button {
-        background-color: #d4af37 !important; color: #111111 !important;
-        font-weight: bold !important; border-radius: 8px !important; width: 100%;
-        border: 1px solid #aa8312 !important;
+    /* Abas Superiores */
+    button[data-baseweb="tab"] { 
+        color: #a4c2b7 !important; 
         font-size: 1.1rem !important;
+        padding: 12px 24px !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] { 
+        color: #e5c158 !important; 
+        font-weight: 900 !important; 
+        border-bottom-color: #e5c158 !important;
+    }
+    
+    /* Botões Ouro */
+    .stButton>button {
+        background: linear-gradient(135deg, #e5c158, #b89742) !important; 
+        color: #030a07 !important;
+        font-weight: 900 !important; 
+        border-radius: 8px !important; 
+        width: 100%;
+        border: none !important;
+        font-size: 0.95rem !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
     
     div.botao-excluir > button {
-        background-color: #8b0000 !important;
+        background: linear-gradient(135deg, #961717, #5c0f0f) !important;
         color: #ffffff !important;
-        border: 1px solid #ff0000 !important;
-        font-size: 0.9rem !important;
     }
     div.botao-editar > button {
-        background-color: #1c4234 !important;
-        color: #ffffff !important;
-        border: 1px solid #d4af37 !important;
-        font-size: 0.9rem !important;
+        background: #0c241b !important;
+        color: #e5c158 !important;
+        border: 1px solid #b89742 !important;
     }
     
+    /* Cronômetro Moderno e Fixo */
     .cronometro-box { 
-        background-color: #07140f; border: 3px solid #d4af37; padding: 15px; border-radius: 12px; margin-bottom: 25px;
+        background: linear-gradient(135deg, #091f16, #030a07);
+        border: 2px solid #b89742; 
+        padding: 12px 25px; 
+        border-radius: 8px; 
+        margin-bottom: 25px;
         text-align: center;
-    }
-    
-    .chapeu-container-novo {
-        background: linear-gradient(135deg, #07140f, #113223);
-        border: 3px solid #d4af37;
-        border-radius: 20px;
-        padding: 25px;
-        margin-top: 15px;
-        margin-bottom: 30px;
-        text-align: center;
-        box-shadow: 0px 8px 25px rgba(0,0,0,0.5);
-    }
-    .chapeu-badge {
-        background-color: #d4af37; color: #000000 !important; padding: 5px 15px;
-        font-weight: bold; border-radius: 50px; font-size: 0.9rem; display: inline-block;
-        margin-bottom: 10px; text-transform: uppercase;
-    }
-    .chapeu-nome {
-        font-size: 2.2rem !important; color: #ffffff !important; font-weight: 900 !important;
-        margin: 5px 0 !important; text-transform: uppercase; letter-spacing: 1px;
-    }
-    .chapeu-subtexto { font-size: 1.1rem !important; color: #d4af37 !important; font-weight: bold !important; margin-bottom: 5px !important; }
-    .chapeu-regras { font-size: 0.9rem !important; color: #a0c0b5 !important; font-style: italic !important; }
-    
-    .galeria-card {
-        background: linear-gradient(135deg, #07140f, #143527);
-        border: 3px double #d4af37;
-        border-radius: 15px;
-        padding: 25px;
-        margin-bottom: 20px;
-        box-shadow: 0px 6px 15px rgba(0,0,0,0.4);
-    }
-    .galeria-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px dashed #1c4234;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
     }
-    .galeria-titulo-evento { font-size: 1.4rem; color: #d4af37; font-weight: bold; }
-    .galeria-data { font-size: 0.9rem; color: #a0c0b5; font-weight: bold; }
-    .galeria-corpo { display: flex; flex-direction: column; gap: 8px; }
-    .galeria-linha-campeao { font-size: 1.6rem; color: #ffffff; font-weight: bold; }
-    .galeria-ouro { color: #d4af37 !important; font-weight: 900; }
-    .galeria-linha-secundaria { font-size: 1.1rem; color: #e0e0e0; }
+    .cronometro-tempo {
+        font-size: 2.5rem !important;
+        font-weight: 900 !important;
+        color: #ffffff !important;
+        font-family: monospace;
+        letter-spacing: 2px;
+    }
     
-    box-auditoria { background-color: #07140f; border: 2px solid #1c4234; padding: 20px; border-radius: 10px; margin-top: 30px; }
-    .creditos { text-align: center; color: #ffffff !important; font-size: 0.8rem; margin-top: 50px; }
-
-    div[data-testid="stTable"] table { border: 3px solid #ffffff !important; background-color: #113223 !important; width: 100%; }
-    div[data-testid="stTable"] th { background-color: #07140f !important; color: #d4af37 !important; border: 2px solid #ffffff !important; text-align: center !important; }
-    div[data-testid="stTable"] td { color: #ffffff !important; border: 2px solid #ffffff !important; text-align: center !important; }
+    /* SISTEMA DE HISTÓRICO E GALERIA */
+    .galeria-card {
+        background: linear-gradient(135deg, #091f16, #0c241b);
+        border: 1px solid #b89742;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.4);
+    }
+    
+    /* Tabelas Oficiais */
+    div[data-testid="stTable"] table { 
+        border-collapse: collapse !important;
+        background-color: #091f16 !important; 
+        border-radius: 8px !important;
+        overflow: hidden;
+        width: 100%; 
+    }
+    div[data-testid="stTable"] th { 
+        background-color: #030a07 !important; 
+        color: #e5c158 !important; 
+        font-weight: 900 !important;
+        text-transform: uppercase;
+        padding: 12px !important;
+        border: 1px solid #143d2c !important;
+    }
+    div[data-testid="stTable"] td { 
+        color: #ffffff !important; 
+        padding: 10px !important;
+        font-weight: 700;
+        border: 1px solid #143d2c !important;
+    }
+    
+    .chapeu-container-novo {
+        background: linear-gradient(135deg, #091f16, #143d2c);
+        border: 2px dashed #e5c158;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        text-align: center;
+    }
+    
+    .creditos { text-align: center; color: #a4c2b7 !important; font-size: 0.75rem; margin-top: 50px; }
     </style>
 """, unsafe_allow_html=True)
 
+# ==========================================
+# 💾 PERSISTÊNCIA COMPLETA DE DADOS (JSON)
+# ==========================================
 def limpar_placares_memoria():
     st.session_state.placares_rodada_atual = {}
     if "semente_reset" not in st.session_state:
         st.session_state.semente_reset = 1
     else:
         st.session_state.semente_reset += 1
-        
     chaves_para_remover = [k for k in st.session_state.keys() if k.startswith("dir_s") or k.startswith("dir_t") or k.startswith("dir_f")]
     for k in chaves_para_remover:
         del st.session_state[k]
-
-def obter_ip_da_rede():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return f"http://{ip}:8501"
-    except Exception: return "http://localhost:8501"
-
-url_oficial = obter_ip_da_rede()
 
 def salvar_estado_no_disco():
     estado = {
@@ -257,14 +241,14 @@ def carregar_estado_do_disco():
             st.session_state.aguardando_escolha_mm = estado.get("aguardando_escolha_mm", False)
             st.session_state.flores_acumuladas_matamata = estado.get("flores_acumuladas_matamata", {})
             st.session_state.duracao_rodada_minutos = estado.get("duracao_rodada_minutos", 45)
-            if estado.get("nome_torneio"):
-                st.session_state.nome_torneio = estado.get("nome_torneio")
+            if estado.get("nome_torneio"): st.session_state.nome_torneio = estado.get("nome_torneio")
             if estado.get("classificacao") is not None:
                 st.session_state.classificacao = pd.DataFrame.from_dict(estado["classificacao"], orient="index")
             if estado.get("hora_inicio_rodada"):
                 st.session_state.hora_inicio_rodada = datetime.fromisoformat(estado["hora_inicio_rodada"])
         except Exception: pass
 
+# Inicialização de chaves essenciais na memória
 if "jogadores" not in st.session_state:
     st.session_state.jogadores = []
     st.session_state.torneio_iniciado = False
@@ -293,12 +277,16 @@ if "jogadores" not in st.session_state:
 
 carregar_estado_do_disco()
 
+# ==========================================
+# ⚙️ MOTOR DE RECALCULO E AUDITORIA RETROATIVA
+# ==========================================
 def reconstruir_classificacao_global():
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
         'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0
     }).set_index('Jogador')
     
+    # Recalcula rodadas de pontos corridos
     for r_num, mesas in list(st.session_state.historico_rodadas.items()):
         for m_id, dados in mesas.items():
             if dados.get("is_chapeu", False):
@@ -307,21 +295,19 @@ def reconstruir_classificacao_global():
             else:
                 j1, j2 = dados["j1"], dados["j2"]
                 if j1 in st.session_state.classificacao.index and j2 in st.session_state.classificacao.index:
-                    s1 = int(dados.get("s1", 0))
-                    s2 = int(dados.get("s2", 0))
-                    t1 = int(dados.get("t1", 0))
-                    t2 = int(dados.get("t2", 0))
-                    f1_gravado = int(dados.get("f1", 0))
-                    f2_gravado = int(dados.get("f2", 0))
+                    s1, s2 = int(dados.get("s1", 0)), int(dados.get("s2", 0))
+                    t1, t2 = int(dados.get("t1", 0)), int(dados.get("t2", 0))
+                    f1, f2 = int(dados.get("f1", 0)), int(dados.get("f2", 0))
                     
                     s1_c = 3 if (s1 == 2 and s2 == 0) else s1
                     s2_c = 3 if (s2 == 2 and s1 == 0) else s2
                     v1 = 1 if s1 > s2 else 0
                     v2 = 1 if s2 > s1 else 0
                     
-                    st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1_gravado]
-                    st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2_gravado]
+                    st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1]
+                    st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2]
                 
+    # Soma as flores acumuladas do Mata-Mata para manter prêmio individual atualizado
     if "flores_acumuladas_matamata" in st.session_state:
         for jogador, flores_mm in st.session_state.flores_acumuladas_matamata.items():
             if jogador in st.session_state.classificacao.index:
@@ -334,10 +320,12 @@ def ja_se_enfrentaram(j1, j2):
     for r_num, mesas in st.session_state.historico_rodadas.items():
         for m_id, dados in mesas.items():
             if not dados.get("is_chapeu", False):
-                if (dados["j1"] == j1 and dados["j2"] == j2) or (dados["j1"] == j2 and dados["j2"] == j1):
-                    return True
+                if (dados["j1"] == j1 and dados["j2"] == j2) or (dados["j1"] == j2 and dados["j2"] == j1): return True
     return False
 
+# ==========================================
+# 🎲 ALGORITMOS DE EMPARELHAMENTO
+# ==========================================
 def gerar_rodada_com_travas():
     limpar_placares_memoria()
     lista_rodada = list(st.session_state.jogadores)
@@ -362,8 +350,7 @@ def gerar_rodada_com_travas():
                 lista_rodada.pop(idx)
                 lista_rodada.pop(0)
                 break
-        if par_encontrado:
-            pares_definidos.append((j1, par_encontrado))
+        if par_encontrado: pares_definidos.append((j1, par_encontrado))
         else:
             par_encontrado = lista_rodada[1]
             lista_rodada.pop(1)
@@ -380,11 +367,7 @@ def gerar_rodada_com_travas():
     salvar_estado_no_disco()
 
 def re_sortear_mata_mata_manual():
-    """Permite ao administrador re-embaralhar os confrontos da fase atual de Mata-Mata se julgar necessário"""
-    if not st.session_state.em_matamata or not st.session_state.confrontos_mm:
-        return
-    
-    # Coleta todos os competidores ativos nesta fase específica do mata-mata
+    if not st.session_state.em_matamata or not st.session_state.confrontos_mm: return
     vivos = []
     for c in st.session_state.confrontos_mm:
         if c["j1"] != "CHAPÉU (Folga)": vivos.append(c["j1"])
@@ -392,21 +375,15 @@ def re_sortear_mata_mata_manual():
     
     limpar_placares_memoria()
     random.shuffle(vivos)
-    
-    # Mantém o número original de slots/vagas da fase atual
     st.session_state.confrontos_mm = []
     idx_mesa = 1
     n = len(vivos)
-    
-    # Se for uma rodada com número ímpar gerada artificialmente, ajusta
     for i in range(n // 2):
         id_m = str(idx_mesa)
-        j1 = vivos[i]
-        j2 = vivos[n-1-i]
+        j1, j2 = vivos[i], vivos[n-1-i]
         st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": j1, "j2": j2})
         st.session_state.placares_rodada_atual[id_m] = [0, 0, 0, 0, 0, 0, False]
         idx_mesa += 1
-        
     st.session_state.hora_inicio_rodada = None
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
@@ -420,17 +397,13 @@ def iniciar_fase_matamata_manual(vagas, nome_fase):
     
     df_classificado = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
     lista_vivos = list(df_classificado.index[:vagas])
-    
-    while len(lista_vivos) < vagas:
-        lista_vivos.append("CHAPÉU (Folga)")
+    while len(lista_vivos) < vagas: lista_vivos.append("CHAPÉU (Folga)")
         
     n = len(lista_vivos)
     idx_mesa = 1
     for i in range(n // 2):
         id_m = str(idx_mesa)
-        j1 = lista_vivos[i]
-        j2 = lista_vivos[n-1-i]
-        
+        j1, j2 = lista_vivos[i], lista_vivos[n-1-i]
         if j2 == "CHAPÉU (Folga)" and j1 != "CHAPÉU (Folga)":
             st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": j1, "j2": j2})
             st.session_state.placares_rodada_atual[id_m] = [2, 0, 72, 0, 0, 0, True]
@@ -438,592 +411,467 @@ def iniciar_fase_matamata_manual(vagas, nome_fase):
             st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": j1, "j2": j2})
             st.session_state.placares_rodada_atual[id_m] = [0, 0, 0, 0, 0, 0, False]
         idx_mesa += 1
-        
     st.session_state.hora_inicio_rodada = None
     st.session_state.cronometro_ativo = False
     salvar_estado_no_disco()
 
-def disparar_atualizacao_placar(m_str, j1, j2):
-    sem = st.session_state.get("semente_reset", 1)
-    s1 = st.session_state[f"dir_s1_{m_str}_r{sem}"]
-    s2 = st.session_state[f"dir_s2_{m_str}_r{sem}"]
-    p_antigo = st.session_state.placares_rodada_atual.get(m_str, [0, 0, 0, 0, 0, 0, False])
+# ==========================================
+# 📺 MONITOR DO TRANSMISSÃO: GRADE COMPACTA (SEM ROLAGEM)
+# ==========================================
+def renderizar_grade_computada_html():
+    """Gera o layout unificado montando os cards compactos horizontais em Grid para TVs"""
+    html_cards = ""
+    mesas_ativas = []
     
-    if (s1 == 2 and s2 == 0):
-        t1 = 72
-        t2 = st.session_state.get(f"dir_t2_{m_str}_r{sem}_2x0j1", p_antigo[3])
-        if t2 > 46: t2 = 46
-    elif (s2 == 2 and s1 == 0):
-        t2 = 72
-        t1 = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x0j2", p_antigo[2])
-        if t1 > 46: t1 = 46
+    if not st.session_state.em_matamata:
+        cont = 1
+        for j1, j2 in st.session_state.confrontos:
+            if j2 != "CHAPÉU (Folga)":
+                p = st.session_state.placares_rodada_atual.get(str(cont), [0,0,0,0,0,0,False])
+                mesas_ativas.append({"id": str(cont), "j1": j1, "j2": j2, "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]})
+                cont += 1
     else:
-        t1_raw = st.session_state.get(f"dir_t1_{m_str}_r{sem}_2x1", "")
-        t2_raw = st.session_state.get(f"dir_t2_{m_str}_r{sem}_2x1", "")
-        try: t1 = int(t1_raw) if t1_raw.strip() != "" else 0
-        except ValueError: t1 = 0
-        try: t2 = int(t2_raw) if t2_raw.strip() != "" else 0
-        except ValueError: t2 = 0
+        for c in st.session_state.confrontos_mm:
+            if c["j2"] != "CHAPÉU (Folga)":
+                p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
+                
+                # Tag amigável para identificar se é Final ou 3º Lugar
+                prefixo_mesa = f"MESA {c['id_original']}"
+                if c["tipo"] == "final": prefixo_mesa = "🏆 GRANDE FINAL"
+                elif c["tipo"] == "3place": prefixo_mesa = "🥉 DISPUTA 3º LUGAR"
+                
+                mesas_ativas.append({"id": prefixo_mesa, "j1": c["j1"], "j2": c["j2"], "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]})
 
-    f1 = st.session_state.get(f"dir_f1_{m_str}_r{sem}", p_antigo[4])
-    f2 = st.session_state.get(f"dir_f2_{m_str}_r{sem}", p_antigo[5])
-    
-    st.session_state.placares_rodada_atual[m_str] = [s1, s2, t1, t2, f1, f2, True]
-    salvar_estado_no_disco()
+    for m in mesas_ativas:
+        is_finalizada = (int(m["s1"]) == 2 or int(m["s2"]) == 2)
+        
+        if is_finalizada:
+            status_badge = '<span style="background-color: #3a1616; color: #ff8888; border: 1px solid #ff4444; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px;">🛑 FINALIZADA</span>'
+            card_border = "1px solid #233d32"
+            bg_card = "linear-gradient(135deg, #05140e, #091f16)"
+            opacity_perdedor = "opacity: 0.4;"
+        else:
+            status_badge = '<span style="background-color: #11361c; color: #6eff89; border: 1px solid #2ecc71; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 900; letter-spacing: 1px; animation: pulse 2s infinite;">🟢 EM ANDAMENTO</span>'
+            card_border = "2px solid #b89742"
+            bg_card = "linear-gradient(135deg, #091f16, #123325)"
+            opacity_perdedor = "opacity: 1;"
 
-def salvar_mudanca_retroativa(r_alvo, m_id, j1, j2):
-    st.session_state.historico_rodadas[r_alvo][m_id]["s1"] = st.session_state[f"ret_s1_{r_alvo}_{m_id}"]
-    st.session_state.historico_rodadas[r_alvo][m_id]["t1"] = st.session_state[f"ret_t1_{r_alvo}_{m_id}"]
-    st.session_state.historico_rodadas[r_alvo][m_id]["f1"] = st.session_state[f"ret_f1_{r_alvo}_{m_id}"]
-    st.session_state.historico_rodadas[r_alvo][m_id]["s2"] = st.session_state[f"ret_s2_{r_alvo}_{m_id}"]
-    st.session_state.historico_rodadas[r_alvo][m_id]["t2"] = st.session_state[f"ret_t2_{r_alvo}_{m_id}"]
-    st.session_state.historico_rodadas[r_alvo][m_id]["f2"] = st.session_state[f"ret_f2_{r_alvo}_{m_id}"]
-    reconstruir_classificacao_global()
+        venceu_j1 = "color: #e5c158; font-weight: 900;" if (is_finalizada and m["s1"] > m["s2"]) else "color: #ffffff;"
+        venceu_j2 = "color: #e5c158; font-weight: 900;" if (is_finalizada and m["s2"] > m["s1"]) else "color: #ffffff;"
+        
+        style_j1 = venceu_j1 + (opacity_perdedor if (is_finalizada and m["s1"] < m["s2"]) else "")
+        style_j2 = venceu_j2 + (opacity_perdedor if (is_finalizada and m["s2"] < m["s1"]) else "")
 
-def desenhar_mesa_planta_baixa(j1, j2, mesa_num, s1, t1, f1, s2, t2, f2):
-    html_mesa = f"""
-    <div style="background-color: #113223; border: 8px solid #5a3825; border-radius: 50px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; position: relative; box-shadow: inset 0px 0px 40px rgba(0,0,0,0.9), 0px 10px 20px rgba(0,0,0,0.6); height: 410px; box-sizing: border-box; color: #ffffff; font-family: sans-serif; margin-bottom: 5px;">
-        <div style="position: absolute; top: 15px; text-align: center; width: 100%;">
-            <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold;">🧔 JOGADOR 1</div>
-            <div style="background: linear-gradient(135deg, #d4af37, #aa8312); color: #000; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; border: 1px solid #fff;">{j1}</div>
-        </div>
-        <div style="background-color: rgba(7, 20, 15, 0.95); border: 2px solid #d4af37; border-radius: 15px; padding: 12px; width: 85%; margin-top: 95px; text-align: center;">
-            <div style="font-size: 0.85rem; color: #d4af37; font-weight: bold; letter-spacing: 2px;">🎰 MESA {mesa_num}</div>
-            <hr style="margin: 8px 0; border-top: 1px solid #1c4234;">
-            <div style="display: flex; justify-content: space-around; align-items: center; font-size: 2rem; font-weight: bold;">
-                <div style="color: #d4af37;">{int(s1)}<span style="font-size:1.1rem;">s</span> {int(t1)}<span style="font-size:1.1rem;">t</span></div>
-                <div style="font-size: 1rem; color: #d4af37;">VS</div>
-                <div style="color: #fff;">{int(s2)}<span style="font-size:1.1rem;">s</span> {int(t2)}<span style="font-size:1.1rem;">t</span></div>
+        # Verificação para evitar printar string inteira de final na id
+        label_mesa = m["id"] if "🏆" in m["id"] or "🥉" in m["id"] else f"🎰 MESA {m['id']}"
+
+        html_cards += f"""
+        <div style="background: {bg_card}; border: {card_border}; border-radius: 10px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-family: 'Montserrat', sans-serif; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(184,151,66,0.2); padding-bottom: 6px;">
+                <span style="color: #e5c158; font-weight: 900; font-size: 0.85rem; letter-spacing: 1px;">{label_mesa}</span>
+                {status_badge}
             </div>
-            <div style="margin-top: 8px; font-size: 0.95rem; color: #ff69b4; font-weight: bold;">🌸 {int(f1)} fl. &nbsp;|&nbsp; 🌸 {int(f2)} fl.</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; {style_j1}">
+                <span style="font-size: 0.95rem; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;">{m["j1"]}</span>
+                <div style="display: flex; gap: 8px; font-weight: 900; font-size: 1.15rem;">
+                    <span style="color: #e5c158;">{int(m["s1"])}<span style="font-size: 0.65rem; font-weight:400; color: #a4c2b7;">S</span></span>
+                    <span>{int(m["t1"])}<span style="font-size: 0.65rem; font-weight:400; color: #a4c2b7;">T</span></span>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; {style_j2}">
+                <span style="font-size: 0.95rem; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;">{m["j2"]}</span>
+                <div style="display: flex; gap: 8px; font-weight: 900; font-size: 1.15rem;">
+                    <span style="color: #e5c158;">{int(m["s2"])}<span style="font-size: 0.65rem; font-weight:400; color: #a4c2b7;">S</span></span>
+                    <span>{int(m["t2"])}<span style="font-size: 0.65rem; font-weight:400; color: #a4c2b7;">T</span></span>
+                </div>
+            </div>
+            <div style="margin-top: 8px; padding-top: 4px; border-top: 1px dashed rgba(20,61,44,0.3); font-size: 0.7rem; color: #ff69b4; text-align: right; font-weight: bold;">
+                🌸 Flores: {int(m["f1"])} vs {int(m["f2"])}
+            </div>
         </div>
-        <div style="position: absolute; bottom: 15px; text-align: center; width: 100%;">
-            <div style="background: linear-gradient(135deg, #fff, #dcdcdc); color: #000; padding: 8px 30px; border-radius: 20px; font-size: 1.2rem; font-weight: bold; display: inline-block; border: 1px solid #aaa;">{j2}</div>
-            <div style="font-size: 0.85rem; color: #fff; font-weight: bold;">🧔 JOGADOR 2</div>
-        </div>
+        """
+
+    html_completo = f"""
+    <style> @keyframes pulse {{ 0% {{ opacity: 0.6; }} 50% {{ opacity: 1; }} 100% {{ opacity: 0.6; }} }} </style>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; width: 100%;">
+        {html_cards}
     </div>
     """
-    components.html(html_mesa, height=425, scrolling=False)
+    components.html(html_completo, height=650, scrolling=True)
 
-def renderizar_formulario_mesa_admin(m, j1, j2, sem_id):
+# ==========================================
+# 🏎️ ENGINE FRAGMENTADA DE OPERAÇÃO DE MESA
+# ==========================================
+@st.fragment
+def renderizar_bloco_mesa_isolado(m, j1, j2, sem_id):
     p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
     s1, s2, t1, t2, f1, f2 = p[0], p[1], p[2], p[3], p[4], p[5]
     
-    c1, c2 = st.columns([1, 1])
+    is_f = (int(s1) == 2 or int(s2) == 2)
+    cor_borda = "#ff4444" if is_f else "#e5c158"
+    texto_st = "🛑 FINALIZADA" if is_f else "🟢 EM ANDAMENTO"
+    
+    st.markdown(f"""
+        <div style='background:#091f16; border-left:5px solid {cor_borda}; padding:12px; margin-top:15px; border-radius:4px;'>
+            <span style='color:#e5c158; font-weight:900;'>🎰 MESA {m}</span> &nbsp;|&nbsp; {texto_st}<br>
+            <span style='font-size:1.1rem; text-transform:uppercase;'><b>{j1}</b> ({s1}S) vs <b>{j2}</b> ({s2}S)</span>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    c1, c2, c3 = st.columns([2, 2, 1.2])
     with c1:
-        st.markdown(f"<h4 class='titulo-passo-admin'>• SETS (Passo 1)</h4>", unsafe_allow_html=True)
-        s1_in = st.number_input(f"Sets - {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-        s2_in = st.number_input(f"Sets - {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-
+        s1_in = st.number_input(f"Sets {j1}", 0, 2, int(s1), key=f"dir_s1_{m}_{sem_id}")
+        s2_in = st.number_input(f"Sets {j2}", 0, 2, int(s2), key=f"dir_s2_{m}_{sem_id}")
+    
     jogo_encerrado = (s1_in == 2 or s2_in == 2)
     with c2:
         if not jogo_encerrado:
-            st.warning("Definir os Sets para liberar os Tentos.")
+            st.caption("Aguardando definição de Sets")
+            t1_final, t2_final = 0, 0
         else:
-            st.markdown(f"<h4 class='titulo-passo-admin'>• TENTOS (Passo 2)</h4>", unsafe_allow_html=True)
+            # TRAVAS DE SEGURANÇA ANTIFRAUDE PRESERVADAS
             if s1_in == 2 and s2_in == 0:
-                st.info(f"{j1} 2x0. Fixo 72.")
-                st.number_input(f"Tentos - {j1}", 72, 72, 72, key=f"dir_t1_{m}_r{sem_id}_2x0j1", disabled=True)
-                st.number_input(f"Tentos - {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_r{sem_id}_2x0j1", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                t1_final = 72
+                t2_final = st.number_input(f"Tentos {j2} (Máx: 46)", 0, 46, min(int(t2), 46), key=f"dir_t2_{m}_{sem_id}_2x0")
             elif s2_in == 2 and s1_in == 0:
-                st.number_input(f"Tentos - {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_r{sem_id}_2x0j2", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-                st.info(f"{j2} 2x0. Fixo 72.")
-                st.number_input(f"Tentos - {j2}", 72, 72, 72, key=f"dir_t2_{m}_r{sem_id}_2x0j2", disabled=True)
+                t1_final = st.number_input(f"Tentos {j1} (Máx: 46)", 0, 46, min(int(t1), 46), key=f"dir_t1_{m}_{sem_id}_2x0")
+                t2_final = 72
             else:
-                t1_val_str = "" if (t1 == 72 or t1 == 0) else str(t1)
-                t2_val_str = "" if (t2 == 72 or t2 == 0) else str(t2)
-                st.text_input(f"Digite Tentos - {j1}", value=t1_val_str, key=f"dir_t1_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Digite...")
-                st.text_input(f"Digite Tentos - {j2}", value=t2_val_str, key=f"dir_t2_{m}_r{sem_id}_2x1", on_change=disparar_atualizacao_placar, args=(m, j1, j2), placeholder="Digite...")
-            
-            st.markdown(f"<h4 class='titulo-passo-admin'>• FLORES (Passo 3)</h4>", unsafe_allow_html=True)
-            st.number_input(f"Flores - {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
-            st.number_input(f"Flores - {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_r{sem_id}", on_change=disparar_atualizacao_placar, args=(m, j1, j2))
+                t1_raw = st.text_input(f"Tentos {j1} (Min 48 se ganhou)", value="" if t1==72 or t1==0 else str(t1), key=f"dir_t1_{m}_{sem_id}_2x1")
+                t2_raw = st.text_input(f"Tentos {j2} (Min 48 se ganhou)", value="" if t2==72 or t2==0 else str(t2), key=f"dir_t2_{m}_{sem_id}_2x1")
+                try: t1_final = int(t1_raw) if t1_raw.strip() != "" else 0
+                except: t1_final = 0
+                try: t2_final = int(t2_raw) if t2_raw.strip() != "" else 0
+                except: t2_final = 0
+    with c3:
+        f1_final = st.number_input(f"Flores {j1}", 0, 20, int(f1), key=f"dir_f1_{m}_{sem_id}")
+        f2_final = st.number_input(f"Flores {j2}", 0, 20, int(f2), key=f"dir_f2_{m}_{sem_id}")
+        
+    if st.button(f"💾 Confirmar Mesa {m}", key=f"btn_s_m_{m}"):
+        # Validações estruturais do placar de 2x1
+        if jogo_encerrado and s1_in == 1 and s2_in == 2 and (t2_final < 48 or t1_final < 24):
+            st.error("Erro: No placar de 2x1, o vencedor precisa de pelo menos 48 tentos e o perdedor de 24.")
+        elif jogo_encerrado and s1_in == 2 and s2_in == 1 and (t1_final < 48 or t2_final < 24):
+            st.error("Erro: No placar de 2x1, o vencedor precisa de pelo menos 48 tentos e o perdedor de 24.")
+        else:
+            st.session_state.placares_rodada_atual[m] = [s1_in, s2_in, t1_final, t2_final, f1_final, f2_final, True]
+            salvar_estado_no_disco()
+            st.rerun()
 
-# --- BARRA LATERAL ---
-with st.sidebar:
-    st.markdown("## ⚙️ Gestão Técnico")
-    senha = st.text_input("Chave Master:", type="password")
-    is_admin = (senha == CHAVE_ADMINISTRADOR)
-    if is_admin:
-        # Seção do Cronômetro dinâmico (Disponível até o fim do torneio, incluindo mata-mata)
-        if st.session_state.torneio_iniciado and not st.session_state.campeao:
-            st.markdown("### ⏱️ Cronômetro da Rodada")
-            minutos_escolhidos = st.number_input("Duração da rodada (min):", min_value=5, max_value=120, value=int(st.session_state.get("duracao_rodada_minutos", 45)), step=5)
+# ==========================================
+# ⚙️ SIDEBAR ADMIN CONTROL
+# ==========================================
+modo_tela = st.selectbox("📺 INTERFACE SELECIONADA:", ["💻 Painel do Operador (Modo Completo)", "📺 Painel Digital (Salão / TV)"], index=0)
+is_modo_tv = (modo_tela == "📺 Painel Digital (Salão / TV)")
+
+if is_modo_tv:
+    st.markdown("<style>section[data-testid='stSidebar'] { display: none !important; }</style>", unsafe_allow_html=True)
+    is_admin = False
+else:
+    with st.sidebar:
+        st.markdown("## ⚙️ CONTROLE DO ADMINISTRADOR")
+        senha = st.text_input("Chave Master:", type="password")
+        is_admin = (senha == CHAVE_ADMINISTRADOR)
+        
+        if is_admin and st.session_state.torneio_iniciado and not st.session_state.campeao:
+            st.markdown("### ⏱️ Relógio Regulamentar")
+            minutos_escolhidos = st.number_input("Duração total (min):", 5, 120, int(st.session_state.get("duracao_rodada_minutos", 45)), 5)
             st.session_state.duracao_rodada_minutos = minutos_escolhidos
             
-            if st.button("▶️ Iniciar/Disparar Tempo"):
+            if st.button("▶️ Disparar Cronômetro"):
                 st.session_state.hora_inicio_rodada = datetime.now()
                 st.session_state.cronometro_ativo = True
-                salvar_estado_no_disco()
-                st.rerun()
+                salvar_estado_no_disco(); st.rerun()
             if st.button("⏹️ Pausar Cronômetro"):
                 st.session_state.cronometro_ativo = False
-                salvar_estado_no_disco()
+                salvar_estado_no_disco(); st.rerun()
+                
+            st.markdown("---")
+            st.markdown("🎲 **Mesa de Ajustes**")
+            if st.button("🔄 Forçar Re-sorteio desta Fase"):
+                if not st.session_state.em_matamata: gerar_rodada_com_travas()
+                else: re_sortear_mata_mata_manual()
                 st.rerun()
-        
-        # Botão Inteligente de Re-Sorteio (Funciona em Pontos Corridos e Mata-Mata)
-        if st.session_state.torneio_iniciado and not st.session_state.campeao and not st.session_state.get("aguardando_escolha_mm", False):
+
             st.markdown("---")
-            st.markdown("🎲 **Ajuste de Confrontos**")
-            if st.button("🔄 Refazer Sorteio Desta Etapa"):
-                if not st.session_state.em_matamata:
-                    gerar_rodada_com_travas()
-                else:
-                    re_sortear_mata_mata_manual()
-                st.success("Rodada re-sorteada com sucesso!")
-                st.rerun()
-                
-        st.markdown("---")
-        st.markdown("⚠️ **Zona de Segurança**")
-        
-        # Confirmação de Reset Geral do Torneio Atual
-        confirma_reset_geral = st.checkbox("Aceito apagar o torneio atual em andamento", key="check_reset_geral")
-        if st.button("🚨 LIMPAR COMPLETO (Reset Torneio)", disabled=not confirma_reset_geral):
-            if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
-            st.session_state.clear(); st.rerun()
+            st.markdown("⚠️ **Reset e Segurança**")
+            confirma_reset_geral = st.checkbox("Desejo apagar os dados do torneio atual", key="check_reset_geral")
+            if st.button("🚨 LIMPAR COMPLETO", disabled=not confirma_reset_geral):
+                if os.path.exists(ARQUIVO_BACKUP): os.remove(ARQUIVO_BACKUP)
+                st.session_state.clear(); st.rerun()
 
-# --- INTERFACE PRINCIPAL ---
-st.markdown(f"<h1 style='text-align:center;'>🃏 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
-aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação Geral", "📜 Galeria de Campeões"])
+# --- HEADER PRINCIPAL ---
+st.markdown(f"<h1 style='text-align:center; font-weight:900; color:#e5c158 !important;'>🃏 {st.session_state.get('nome_torneio', 'Torneio de Truco')}</h1>", unsafe_allow_html=True)
 
-with aba_arena:
-    if not st.session_state.torneio_iniciado:
-        st.markdown("### 🎮 Inscrições de Competidores")
-        nome_t = st.text_input("Nome do Evento:", value="Torneio de Truco do CTG")
-        
-        if is_admin:
-            if st.session_state.get("jogador_sendo_editado") is not None:
-                idx_edit = st.session_state.jogador_sendo_editado
-                nome_antigo = st.session_state.jogadores[idx_edit]
-                st.warning(f"✍️ Editando o competidor: **{nome_antigo}**")
-                with st.form("form_edicao"):
-                    novo_nome = st.text_input("Corrigir Nome:", value=nome_antigo)
-                    col_b1, col_b2 = st.columns(2)
-                    with col_b1:
-                        if st.form_submit_button("💾 Salvar") and novo_nome.strip():
-                            st.session_state.jogadores[idx_edit] = novo_nome.strip()
-                            st.session_state.jogador_sendo_editado = None
-                            salvar_estado_no_disco(); st.rerun()
-                    with col_b2:
-                        if st.form_submit_button("❌ Cancelar"):
-                            st.session_state.jogador_sendo_editado = None
-                            st.rerun()
-            else:
-                with st.form("cad", clear_on_submit=True):
-                    nj = st.text_input("Nome do Competidor:")
-                    if st.form_submit_button("➕ Cadastrar") and nj:
-                        st.session_state.jogadores.append(nj.strip())
-                        salvar_estado_no_disco(); st.rerun()
-                        
-        st.write(f"**Inscritos ({len(st.session_state.jogadores)}):**")
-        if st.session_state.jogadores:
-            if is_admin:
-                for idx, player in enumerate(st.session_state.jogadores):
-                    c_nome, c_edit, c_excluir = st.columns([6, 1.5, 1.5])
-                    with c_nome: st.markdown(f"🔹 **{player}**")
-                    with c_edit:
-                        st.markdown('<div class="botao-editar">', unsafe_allow_html=True)
-                        if st.button(f"✏️ Editar", key=f"btn_edit_{idx}"):
-                            st.session_state.jogador_sendo_editado = idx
-                            st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    with c_excluir:
-                        st.markdown('<div class="botao-excluir">', unsafe_allow_html=True)
-                        if st.button(f"🗑️ Excluir", key=f"btn_del_{idx}"):
-                            st.session_state.jogadores.pop(idx)
-                            if st.session_state.jogador_sendo_editado == idx:
-                                st.session_state.jogador_sendo_editado = None
-                            salvar_estado_no_disco(); st.rerun()
-                        st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                st.info(", ".join(st.session_state.jogadores))
+# ==========================================
+# 📺 FLUXO 1: INTERFACE EXCLUSIVA DA TV (SALÃO)
+# ==========================================
+if is_modo_tv:
+    if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
+        duracao_min = st.session_state.get("duracao_rodada_minutos", 45)
+        tl = st.session_state.hora_inicio_rodada + timedelta(minutes=duracao_min)
+        tr = tl - datetime.now()
+        if tr.total_seconds() > 0:
+            st.markdown(f'<div class="cronometro-box"><span style="color:#e5c158; font-weight:900; letter-spacing:1px;">⏱️ CRONÔMETRO DE TRANSMISSÃO</span><div class="cronometro-tempo">{int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</div></div>', unsafe_allow_html=True)
         else:
-            st.info("Nenhum competidor cadastrado até o momento.")
+            st.markdown('<div class="cronometro-box"><div class="cronometro-tempo" style="color:#ff3333 !important; width:100%;">⏰ TEMPO REGULAMENTAR ESGOTADO</div></div>', unsafe_allow_html=True)
             
-        if is_admin and len(st.session_state.jogadores) >= 4:
-            st.markdown("---")
-            if st.button("🃏 DISPARAR TORNEIO"):
-                st.session_state.nome_torneio = nome_t
-                st.session_state.classificacao = pd.DataFrame({'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0}).set_index('Jogador')
-                st.session_state.torneio_iniciado = True
-                gerar_rodada_com_travas(); st.rerun()
-    else:
-        if st.session_state.campeao:
-            st.markdown("<h1 style='text-align:center; color:#d4af37 !important; font-weight:900; letter-spacing:2px; margin-top:20px;'>🏆 CERIMÔNIA DE PREMIAÇÃO FINAL</h1>", unsafe_allow_html=True)
-            champ, vice = str(st.session_state.campeao), str(st.session_state.vice_campeao)
-            third = str(st.session_state.terceiro_lugar) if st.session_state.terceiro_lugar else "N/A"
-            fourth = str(st.session_state.quarto_lugar) if st.session_state.quarto_lugar else "N/A"
-            
-            rei_flor_nome = str(st.session_state.classificacao['Flores'].idxmax())
-            rei_flor_val = int(st.session_state.classificacao['Flores'].max())
-
-            html_iframe_podio = f"""
-            <div style="background-color: #0d231a; padding: 10px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; box-sizing: border-box;">
-                <div style="display: flex; align-items: flex-end; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 20px auto;">
-                    <div style="flex: 1; background: linear-gradient(135deg, #ffffff, #b0b0b0, #707070); height: 210px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 20px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e0e0e0; box-sizing: border-box;">
-                        <p style="font-size: 3.2rem; font-weight: 900; margin: 0; line-height: 1; color: #111111;">2º</p>
-                        <div style="font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f;">👤 {vice}</div>
-                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #222222;">🥈 Vice-Campeão</div>
-                    </div>
-                    <div style="flex: 1; background: linear-gradient(135deg, #ffe066, #d4af37, #aa8312); height: 270px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 25px 10px; border: 4px solid #ffffff; box-shadow: 0px 0px 40px rgba(212, 175, 55, 0.5), 0px 15px 35px rgba(0,0,0,0.7); box-sizing: border-box;">
-                        <p style="font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; color: #000000;">1º</p>
-                        <div style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 15px 0 5px 0; color: #07140f;">👑 {champ}</div>
-                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #403000;">Rei do Truco / Campeão</div>
-                    </div>
-                    <div style="flex: 1; background: linear-gradient(135deg, #e69d5e, #cd7f32, #8c4f18); height: 170px; border-radius: 20px 20px 10px 10px; text-align: center; padding: 15px 10px; box-shadow: 0px 15px 35px rgba(0,0,0,0.7); border: 3px solid #e69d5e; box-sizing: border-box;">
-                        <p style="font-size: 2.8rem; font-weight: 900; margin: 0; line-height: 1; color: #ffffff;">3º</p>
-                        <div style="font-size: 1.3rem; font-weight: 900; text-transform: uppercase; margin: 10px 0 5px 0; color: #ffffff;">👤 {third}</div>
-                        <div style="font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #f0f0f0;">🥉 3º Colocado</div>
-                    </div>
+    col_tv_m, col_tv_t = st.columns([7, 5])
+    with col_tv_m:
+        st.markdown("<h3 style='color:#e5c158 !important; margin:0 0 10px 0; font-weight:900;'>⚔️ MONITOR DE PARTIDAS EM ANDAMENTO</h3>", unsafe_allow_html=True)
+        if st.session_state.torneio_iniciado and not st.session_state.campeao:
+            renderizar_grade_computada_html()
+        elif st.session_state.campeao:
+            st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #b89742, #e5c158); color:#030a07; padding:30px; border-radius:12px; text-align:center;'>
+                    <h1 style='color:#030a07 !important; font-weight:900; margin:0;'>🏆 TORNEIO CONCLUÍDO</h1>
+                    <p style='color:#030a07 !important; font-size:1.5rem; font-weight:700; margin:10px 0 0 0;'>🥇 CAMPEÃO: {st.session_state.campeao}</p>
                 </div>
-                <div style="display: flex; justify-content: center; gap: 20px; width: 100%; max-width: 950px; margin: 10px auto;">
-                    <div style="flex: 1; background: linear-gradient(135deg, #07140f, #1c4234); border: 2px solid #d4af37; border-radius: 15px; padding: 15px; text-align: center;">
-                        <h5 style="margin:0; color:#d4af37; font-weight:bold; font-size: 0.85rem; text-transform: uppercase;">🏅 4º Colocado</h5>
-                        <h3 style="margin:8px 0 0 0; font-weight:900; font-size:1.3rem; color:#ffffff;">👤 {fourth}</h3>
-                    </div>
-                    <div style="flex: 1; background: linear-gradient(135deg, #4c1130, #a11b5e, #ff69b4); border: 2px solid #ffffff; border-radius: 15px; padding: 15px; text-align: center;">
-                        <h5 style="margin:0; color:#ffffff; font-weight:900; text-transform:uppercase; font-size: 0.85rem;">🌸 Maior Cantador de Flor</h5>
-                        <h3 style="margin:5px 0 2px 0; font-weight:900; font-size:1.4rem; color:#ffffff;">🌸 {rei_flor_nome}</h3>
-                        <p style="margin:0; font-weight:bold; color:#ffe066; font-size:0.85rem;">Cantou {rei_flor_val} flores!</p>
-                    </div>
-                </div>
-            </div>
-            """
-            components.html(html_iframe_podio, height=520, scrolling=False)
+            """, unsafe_allow_html=True)
             
-            if is_admin and st.button("💾 Gravar Campeão na Galeria Histórica"):
-                novo_registro = {"Data": datetime.now().strftime("%d/%m/%Y"), "Torneio": st.session_state.get("nome_torneio"), "Campeao": champ, "Vice": vice, "Terceiro": third, "Quarto": fourth, "ReiDaFlor": f"{rei_flor_nome} ({rei_flor_val} fl.)"}
-                lista_g = []
-                if os.path.exists(ARQUIVO_GALERIA):
-                    try:
-                        with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: lista_g = json.load(f)
-                    except Exception: pass
-                lista_g.append(novo_registro)
-                with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f: json.dump(lista_g, f, ensure_ascii=False, indent=4)
-                st.success("Imortalizados com sucesso na galeria histórica!")
-        
-        elif st.session_state.get("aguardando_escolha_mm", False):
-            st.markdown("## 🏁 Fim da Fase de Pontos Corridos!")
-            st.markdown("### 🛠️ Painel do Administrador: Escolha o Formato do Mata-Mata")
-            st.info("Com base na classificação atual, selecione abaixo como deseja estruturar as eliminatórias:")
-            
-            if is_admin:
-                c_o, c_q, c_s = st.columns(3)
-                with c_o:
-                    if st.button("🏅 Iniciar Oitavas de Final (Top 16)"):
-                        iniciar_fase_matamata_manual(16, "OITAVAS DE FINAL")
-                        st.rerun()
-                with c_q:
-                    if st.button("🏆 Iniciar Quartas de Final (Top 8)"):
-                        iniciar_fase_matamata_manual(8, "QUARTAS DE FINAL")
-                        st.rerun()
-                with c_s:
-                    if st.button("⚡ Iniciar Semifinal Direta (Top 4)"):
-                        iniciar_fase_matamata_manual(4, "SEMIFINAL")
-                        st.rerun()
-            else:
-                st.warning("Aguardando o organizador definir o formato do mata-mata (Oitavas, Quartas ou Semi).")
+    with col_tv_t:
+        st.markdown("<h3 style='color:#e5c158 !important; margin:0 0 10px 0; font-weight:900;'>📊 CLASSIFICAÇÃO ATUALIZADA</h3>", unsafe_allow_html=True)
+        if st.session_state.classificacao is not None:
+            st.table(st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False))
 
-        else:
-            # RENDERIZAÇÃO DO CRONÔMETRO (Ativo tanto na Fase de Pontos quanto no Mata-Mata)
-            if st.session_state.cronometro_ativo and st.session_state.hora_inicio_rodada:
-                duracao_min = st.session_state.get("duracao_rodada_minutos", 45)
-                tl = st.session_state.hora_inicio_rodada + timedelta(minutes=duracao_min)
-                tr = tl - datetime.now()
-                if tr.total_seconds() > 0:
-                    st.markdown(f'<div class="cronometro-box"><h2>⏱️ TEMPO RESTANTE DA RODADA: {int(tr.total_seconds()//60):02d}:{int(tr.total_seconds()%60):02d}</h2></div>', unsafe_allow_html=True)
-                else: 
-                    st.markdown('<div class="cronometro-box"><h2 style="color:red !important;">⏰ TEMPO ESGOTADO NA ARENA!</h2></div>', unsafe_allow_html=True)
-
-            sem_id = st.session_state.get("semente_reset", 1)
-
-            # FASE DE GRUPOS
-            if not st.session_state.em_matamata:
-                st.markdown(f"### 📅 Rodada {st.session_state.rodada_atual} de 5")
-                
-                for j1, j2 in st.session_state.confrontos:
-                    if j2 == "CHAPÉU (Folga)":
-                        st.markdown(f"""
-                            <div class="chapeu-container-novo">
-                                <div class="chapeu-badge">🎩 Jogador no Chapéu</div>
-                                <div class="chapeu-nome">{j1}</div>
-                                <div class="chapeu-subtexto">Você está de folga nesta rodada!</div>
-                                <div class="chapeu-regras">Sua vitória automática foi computada (+1 Vitória, +3 Sets e +72 Tentos Pró).</div>
-                            </div>
-                        """, unsafe_allow_html=True)
-                
-                cont = 1
-                for j1, j2 in st.session_state.confrontos:
-                    if j2 != "CHAPÉU (Folga)":
-                        m = str(cont)
-                        p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
-                        st.markdown(f'<div class="titulo-mesa-destaque">🎰 MESA {m}</div>', unsafe_allow_html=True)
-                        if is_admin:
-                            col_painel, col_entradas = st.columns([2, 3])
-                            with col_painel: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                            with col_entradas: renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
-                        else: 
-                            desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                        cont += 1
-                
-                if is_admin:
-                    st.markdown("### 🏁 Finalizar Etapa")
-                    if st.button("Fechar Rodada e Avançar", type="primary"):
-                        erro_validacao = False
-                        m_c = 1
-                        for j1, j2 in st.session_state.confrontos:
-                            if j2 != "CHAPÉU (Folga)":
-                                p = st.session_state.placares_rodada_atual.get(str(m_c), [0,0,0,0,0,0,False])
-                                s1, s2, t1, t2 = p[0], p[1], p[2], p[3]
-                                if not (s1 == 2 or s2 == 2):
-                                    st.error(f"❌ Erro na Mesa {m_c}: Partida inacabada!"); erro_validacao = True
-                                if s1 == 2 and s2 == 1:
-                                    if t1 < 48 or t2 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido."); erro_validacao = True
-                                elif s2 == 2 and s1 == 1:
-                                    if t2 < 48 or t1 < 24: st.error(f"❌ Erro na Mesa {m_c}: Placar de 2x1 inválido."); erro_validacao = True
-                                m_c += 1
-                                
-                        if not erro_validacao:
-                            id_rodada_str = str(st.session_state.rodada_atual)
-                            st.session_state.historico_rodadas[id_rodada_str] = {}
-                            m_c = 1
-                            for j1, j2 in st.session_state.confrontos:
-                                if j2 == "CHAPÉU (Folga)":
-                                    st.session_state.historico_rodadas[id_rodada_str][f"chapeu_{j1}"] = {"is_chapeu": True, "j1": j1, "j2": "Folga", "s1": 3, "s2": 0, "t1": 72, "t2": 0, "f1": 0, "f2": 0}
-                                else:
-                                    p = st.session_state.placares_rodada_atual.get(str(m_c), [0,0,0,0,0,0,False])
-                                    st.session_state.historico_rodadas[id_rodada_str][str(m_c)] = {"is_chapeu": False, "j1": j1, "j2": j2, "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]}
-                                    m_c += 1
-                            
-                            reconstruir_classificacao_global()
-                            st.session_state.rodada_atual += 1
-                            if st.session_state.rodada_atual <= 5: 
-                                gerar_rodada_com_travas()
-                            else:
-                                st.session_state.aguardando_escolha_mm = True
-                            salvar_estado_no_disco(); st.rerun()
-
-            # FASE MATA-MATA
-            else:
-                st.markdown(f"### ⚡ Eliminatórias: {st.session_state.fase_matamata}")
-                lista_m = st.session_state.confrontos_mm
-                if st.session_state.fase_matamata == "FINAL E TERCEIRO":
-                    lista_m = sorted(st.session_state.confrontos_mm, key=lambda x: 0 if x["tipo"]=="final" else 1)
-
-                for c in lista_m:
-                    m = c["id_original"]
-                    j1, j2 = c["j1"], c["j2"]
-                    p = st.session_state.placares_rodada_atual.get(m, [0,0,0,0,0,0,False])
-                    
-                    if c["tipo"] == "final": tit = "🏆 GRANDE FINAL DO TORNEIO"
-                    elif c["tipo"] == "3place": tit = "🥉 DISPUTA DE 3º E 4º LUGAR"
-                    else: tit = f"⚔️ {st.session_state.fase_matamata} - MESA {m}"
-                    
-                    st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
-                    
-                    if j2 == "CHAPÉU (Folga)":
-                        st.success(f"💚 **{j1}** classificado automaticamente nesta chave por W.O. técnico.")
-                    else:
-                        if is_admin:
-                            col_p_mm, col_e_mm = st.columns([2, 3])
-                            with col_p_mm: desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-                            with col_e_mm: renderizar_formulario_mesa_admin(m, j1, j2, sem_id)
-                        else: 
-                            desenhar_mesa_planta_baixa(j1, j2, m, p[0], p[2], p[4], p[1], p[3], p[5])
-
-                if is_admin:
-                    st.markdown("---")
-                    if st.button("🏆 Confirmar Resultados e Avançar Fase", type="primary"):
-                        erro_mm = False
-                        for c in st.session_state.confrontos_mm:
-                            if c["j2"] != "CHAPÉU (Folga)":
-                                p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
-                                s1, s2, t1, t2 = p[0], p[1], p[2], p[3]
-                                if not (s1 == 2 or s2 == 2):
-                                    st.error(f"❌ Partida inacabada na mesa {c['id_original']}!"); erro_mm = True
-                                if (s1 == 2 and s2 == 1 and (t1 < 48 or t2 < 24)) or (s2 == 2 and s1 == 1 and (t2 < 48 or t1 < 24)):
-                                    st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos de tentos para 2x1."); erro_mm = True
-                        
-                        if not erro_mm:
-                            if "flores_acumuladas_matamata" not in st.session_state:
-                                st.session_state.flores_acumuladas_matamata = {}
-                            if "historico_matamata" not in st.session_state:
-                                st.session_state.historico_matamata = {}
-
-                            f_at = st.session_state.fase_matamata
-                            st.session_state.historico_matamata[f_at] = []
-
-                            venc, perd = [], []
-                            for c in st.session_state.confrontos_mm:
-                                p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
-                                
-                                if c["j1"] != "CHAPÉU (Folga)": 
-                                    st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + int(p[4])
-                                if c["j2"] != "CHAPÉU (Folga)": 
-                                    st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + int(p[5])
-                                
-                                st.session_state.historico_matamata[f_at].append({
-                                    "tipo": c["tipo"], "mesa": c["id_original"],
-                                    "j1": c["j1"], "j2": c["j2"],
-                                    "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]
-                                })
-
-                                w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
-                                if c["tipo"]=="normal": venc.append(w); perd.append(l)
-                                elif c["tipo"]=="final": st.session_state.campeao=w; st.session_state.vice_campeao=l
-                                elif c["tipo"]=="3place": st.session_state.terceiro_lugar=w; st.session_state.quarto_lugar=l
-
-                            venc = [v for v in venc if v != "CHAPÉU (Folga)"]
-                            perd = [p for p in perd if p != "CHAPÉU (Folga)"]
-
-                            if f_at == "OITAVAS DE FINAL":
-                                while len(venc) < 8: venc.append("CHAPÉU (Folga)")
-                                limpar_placares_memoria()
-                                st.session_state.fase_matamata = "QUARTAS DE FINAL"
-                                st.session_state.confrontos_mm = []
-                                for idx_q in range(len(venc)//2):
-                                    id_m = str(idx_q+1)
-                                    ja, jb = venc[idx_q], venc[len(venc)-1-idx_q]
-                                    if jb == "CHAPÉU (Folga)": st.session_state.placares_rodada_atual[id_m] = [2,0,72,0,0,0,True]
-                                    else: st.session_state.placares_rodada_atual[id_m] = [0,0,0,0,0,0,False]
-                                    st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": ja, "j2": jb})
-                                    
-                            elif f_at == "QUARTAS DE FINAL":
-                                while len(venc) < 4: venc.append("CHAPÉU (Folga)")
-                                limpar_placares_memoria()
-                                st.session_state.fase_matamata = "SEMIFINAL"
-                                st.session_state.confrontos_mm = []
-                                for idx_s in range(len(venc)//2):
-                                    id_m = str(idx_s+1)
-                                    ja, jb = venc[idx_s], venc[len(venc)-1-idx_s]
-                                    if jb == "CHAPÉU (Folga)": st.session_state.placares_rodada_atual[id_m] = [2,0,72,0,0,0,True]
-                                    else: st.session_state.placares_rodada_atual[id_m] = [0,0,0,0,0,0,False]
-                                    st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": ja, "j2": jb})
-                                    
-                            elif f_at == "SEMIFINAL":
-                                limpar_placares_memoria()
-                                st.session_state.fase_matamata = "FINAL E TERCEIRO"
-                                j_f1 = venc[0] if len(venc) > 0 else "Finalista A"
-                                j_f2 = venc[1] if len(venc) > 1 else "Finalista B"
-                                j_p1 = perd[0] if len(perd) > 0 else "Disputa A"
-                                j_p2 = perd[1] if len(perd) > 1 else "Disputa B"
-                                
-                                st.session_state.confrontos_mm = [
-                                    {"id_original": "1", "tipo": "final", "j1": j_f1, "j2": j_f2},
-                                    {"id_original": "2", "tipo": "3place", "j1": j_p1, "j2": j_p2}
-                                ]
-                                st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
-                            
-                            reconstruir_classificacao_global()
-                            salvar_estado_no_disco(); st.rerun()
-
-# --- ABA 2: CLASSIFICAÇÃO GERAL E HISTÓRICO RETROATIVO ---
-with aba_tabela:
-    if st.session_state.classificacao is not None:
-        st.markdown("### 📊 Tabela Oficial de Pontos")
-        df_r = st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False)
-        st.table(df_r)
-        
-        # 📌 HISTÓRICO VISUAL DAS ELIMINATÓRIAS (MATA-MATA)
-        hist_mm = st.session_state.get("historico_matamata", {})
-        if hist_mm:
-            st.markdown("---")
-            st.markdown("### 🔍 Histórico do Mata-Mata (Chaves Eliminatórias)")
-            fases_gravadas = list(hist_mm.keys())
-            fase_sel = st.selectbox("Selecione a Etapa do Mata-Mata para conferência:", fases_gravadas)
-            
-            if fase_sel:
-                st.write(f"📊 **Resultados Gravados - {fase_sel}:**")
-                for jogo in hist_mm[fase_sel]:
-                    j1, j2 = jogo["j1"], jogo["j2"]
-                    if j2 == "CHAPÉU (Folga)":
-                        st.markdown(f"🔹 **{j1}** avançou automaticamente por folga/W.O.")
-                    else:
-                        label_jogo = "Mesa " + jogo["mesa"]
-                        if jogo["tipo"] == "final": label_jogo = "🏆 GRANDE FINAL"
-                        elif jogo["tipo"] == "3place": label_jogo = "🥉 3º E 4º LUGAR"
-                        
-                        st.markdown(f"**{label_jogo}:** {j1} **{int(jogo['s1'])}s {int(jogo['t1'])}t** (🌸{int(jogo['f1'])}fl) _VS_ {j2} **{int(jogo['s2'])}s {int(jogo['t2'])}t** (🌸{int(jogo['f2'])}fl)")
-        
-        # SEÇÃO: AUDITORIA DAS 5 RODADAS INICIAIS
-        if st.session_state.historico_rodadas:
-            st.markdown("---")
-            st.markdown("### 🔍 Auditoria e Correção de Rodadas Passadas (Fase de Grupos)")
-            rodadas_concluidas = list(st.session_state.historico_rodadas.keys())
-            r_selecionada = st.selectbox("Escolha a Rodada da Fase de Grupos:", rodadas_concluidas)
-            
-            if r_selecionada:
-                mesas_salvas = st.session_state.historico_rodadas[r_selecionada]
-                for m_id, dados in mesas_salvas.items():
-                    if dados.get("is_chapeu", False):
-                        st.warning(f"🎩 **Jogador no Chapéu:** {dados['j1']} ganhou folga automática (+1V, 3S, 72T).")
-                    else:
-                        j1, j2 = dados["j1"], dados["j2"]
-                        st.markdown(f"**Mesa {m_id}: {j1} VS {j2}**")
-                        if is_admin:
-                            col_e1, col_e2 = st.columns(2)
-                            with col_e1:
-                                st.write(f"🥇 Controles {j1}")
-                                st.number_input(f"Sets ({j1})", 0, 2, int(dados.get("s1",0)), key=f"ret_s1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Tentos ({j1})", 0, 72, int(dados.get("t1",0)), key=f"ret_t1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Flores ({j1})", 0, 20, int(dados.get("f1",0)), key=f"ret_f1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                            with col_e2:
-                                st.write(f"🥈 Controles {j2}")
-                                st.number_input(f"Sets ({j2})", 0, 2, int(dados.get("s2",0)), key=f"ret_s2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Tentos ({j2})", 0, 72, int(dados.get("t2",0)), key=f"ret_t2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Flores ({j2})", 0, 20, int(dados.get("f2",0)), key=f"ret_f2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                        else:
-                            st.markdown(f"👉 **Placar Registrado:** {dados.get('s1',0)}s {dados.get('t1',0)}t (🌸{dados.get('f1',0)}fl)  **VS** {dados.get('s2',0)}s {dados.get('t2',0)}t (🌸{dados.get('f2',0)}fl)")
-                        st.markdown("---")
-
-# --- ABA 3: GALERIA DE CAMPEÕES E EXCLUSÃO SELETIVA ---
-with aba_historico:
-    st.markdown("### 📜 Galeria Tradicionalista de Campeões")
+# ==========================================
+# 💻 FLUXO 2: PAINEL DO OPERADOR COMPLETÍSSIMO
+# ==========================================
+else:
+    aba_arena, aba_tabela, aba_historico = st.tabs(["⚔️ Arena de Confrontos", "📊 Classificação & Auditoria", "📜 Galeria de Campeões"])
     
-    # Gerenciador Seletivo Interno da Galeria (Painel do Admin)
-    if is_admin:
+    with aba_arena:
+        if not st.session_state.torneio_iniciado:
+            st.markdown("### 🎮 Configurações Iniciais do Torneio")
+            nome_t = st.text_input("Nome Oficial da Edição:", value="Torneio de Truco do CTG")
+            
+            if is_admin:
+                if st.session_state.get("jogador_sendo_editado") is not None:
+                    idx_edit = st.session_state.jogador_sendo_editado
+                    nome_antigo = st.session_state.jogadores[idx_edit]
+                    st.warning(f"✍️ Corrigindo nome do competidor: **{nome_antigo}**")
+                    with st.form("form_edicao"):
+                        novo_nome = st.text_input("Novo Nome:", value=nome_antigo)
+                        c_b1, c_b2 = st.columns(2)
+                        with c_b1:
+                            if st.form_submit_button("💾 Atualizar"):
+                                st.session_state.jogadores[idx_edit] = novo_nome.strip()
+                                st.session_state.jogador_sendo_editado = None
+                                salvar_estado_no_disco(); st.rerun()
+                        with c_b2:
+                            if st.form_submit_button("❌ Cancelar"):
+                                st.session_state.jogador_sendo_editado = None; st.rerun()
+                else:
+                    with st.form("cad_jogadores", clear_on_submit=True):
+                        nj = st.text_input("Nome do Competidor:")
+                        if st.form_submit_button("➕ Adicionar Competidor") and nj:
+                            st.session_state.jogadores.append(nj.strip())
+                            salvar_estado_no_disco(); st.rerun()
+                            
+            st.write(f"**Competidores Registrados ({len(st.session_state.jogadores)}):**")
+            if st.session_state.jogadores:
+                if is_admin:
+                    for idx, player in enumerate(st.session_state.jogadores):
+                        c_nome, c_edit, c_excluir = st.columns([6, 1.5, 1.5])
+                        with c_nome: st.markdown(f"🔹 **{player}**")
+                        with c_edit:
+                            st.markdown('<div class="botao-editar">', unsafe_allow_html=True)
+                            if st.button(f"✏️ Editar", key=f"btn_edit_{idx}"):
+                                st.session_state.jogador_sendo_editado = idx; st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                        with c_excluir:
+                            st.markdown('<div class="botao-excluir">', unsafe_allow_html=True)
+                            if st.button(f"🗑️ Excluir", key=f"btn_del_{idx}"):
+                                st.session_state.jogadores.pop(idx)
+                                salvar_estado_no_disco(); st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
+                else:
+                    st.info(", ".join(st.session_state.jogadores))
+            
+            if is_admin and len(st.session_state.jogadores) >= 4:
+                st.markdown("---")
+                if st.button("🃏 INICIAR E DISTRIBUIR PRIMEIRA RODADA", type="primary"):
+                    st.session_state.nome_torneio = nome_t
+                    reconstruir_classificacao_global()
+                    st.session_state.torneio_iniciado = True
+                    gerar_rodada_com_travas(); st.rerun()
+        else:
+            if st.session_state.campeao:
+                st.balloons()
+                st.success(f"🥇 Campeão: {st.session_state.campeao} | 🥈 Vice: {st.session_state.vice_campeao}")
+                
+                if is_admin and st.button("💾 Eternizar Resultados na Galeria Histórica"):
+                    novo_registro = {
+                        "Data": datetime.now().strftime("%d/%m/%Y"),
+                        "Torneio": st.session_state.get("nome_torneio"),
+                        "Campeao": st.session_state.campeao,
+                        "Vice": st.session_state.vice_campeao,
+                        "Terceiro": st.session_state.terceiro_lugar if st.session_state.terceiro_lugar else "N/A",
+                        "Quarto": st.session_state.quarto_lugar if st.session_state.quarto_lugar else "N/A"
+                    }
+                    lista_g = []
+                    if os.path.exists(ARQUIVO_GALERIA):
+                        try:
+                            with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: lista_g = json.load(f)
+                        except: pass
+                    lista_g.append(novo_registro)
+                    with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f: json.dump(lista_g, f, ensure_ascii=False, indent=4)
+                    st.success("Salvo com sucesso na história do clube!")
+            
+            elif st.session_state.get("aguardando_escolha_mm", False):
+                st.markdown("## 🏁 Fase de Grupos Concluída! Defina a Chave Automática do Mata-Mata:")
+                if is_admin:
+                    c_o, c_q, c_s = st.columns(3)
+                    with c_o:
+                        if st.button("🏅 Oitavas de Final (Top 16)"): iniciar_fase_matamata_manual(16, "OITAVAS DE FINAL"); st.rerun()
+                    with c_q:
+                        if st.button("🏆 Quartas de Final (Top 8)"): iniciar_fase_matamata_manual(8, "QUARTAS DE FINAL"); st.rerun()
+                    with c_s:
+                        if st.button("⚡ Semifinal Direta (Top 4)"): iniciar_fase_matamata_manual(4, "SEMIFINAL"); st.rerun()
+
+            else:
+                sem_id = st.session_state.get("semente_reset", 1)
+                
+                for j1, j2 in st.session_state.confrontos:
+                    if j2 == "CHAPÉU (Folga)":
+                        st.markdown(f'<div class="chapeu-container-novo"><div style="background-color:#e5c158; color:#030a07; padding:2px 10px; border-radius:10px; font-size:0.75rem; font-weight:900; display:inline-block;">🎩 CHAPÉU (FOLGA REGULAMENTAR)</div><h3 style="margin:5px 0 0 0; font-weight:900;">{j1} (+1V / +3S / +72T)</h3></div>', unsafe_allow_html=True)
+
+                if not st.session_state.em_matamata:
+                    st.markdown(f"### 📅 Fase de Pontos Corridos: Rodada {st.session_state.rodada_atual} de 5")
+                    cont = 1
+                    for j1, j2 in st.session_state.confrontos:
+                        if j2 != "CHAPÉU (Folga)":
+                            renderizar_bloco_mesa_isolado(str(cont), j1, j2, sem_id)
+                            cont += 1
+                            
+                    if is_admin:
+                        st.markdown("---")
+                        if st.button("🏁 VALIDAR E FECHAR RODADA", type="primary"):
+                            erro = False
+                            mc = 1
+                            for j1, j2 in st.session_state.confrontos:
+                                if j2 != "CHAPÉU (Folga)":
+                                    p = st.session_state.placares_rodada_atual.get(str(mc), [0,0,0,0,0,0,False])
+                                    if not (p[0] == 2 or p[1] == 2):
+                                        st.error(f"A Mesa {mc} ainda possui partida em andamento!"); erro = True
+                                    mc += 1
+                            if not erro:
+                                id_r = str(st.session_state.rodada_atual)
+                                st.session_state.historico_rodadas[id_r] = {}
+                                mc = 1
+                                for j1, j2 in st.session_state.confrontos:
+                                    if j2 == "CHAPÉU (Folga)":
+                                        st.session_state.historico_rodadas[id_r][f"chapeu_{j1}"] = {"is_chapeu": True, "j1": j1, "j2": "Folga", "s1": 3, "s2": 0, "t1": 72, "t2": 0, "f1": 0, "f2": 0}
+                                    else:
+                                        p = st.session_state.placares_rodada_atual.get(str(mc), [0,0,0,0,0,0,False])
+                                        st.session_state.historico_rodadas[id_r][str(mc)] = {"is_chapeu": False, "j1": j1, "j2": j2, "s1": p[0], "s2": p[1], "t1": p[2], "t2": p[3], "f1": p[4], "f2": p[5]}
+                                        mc += 1
+                                reconstruir_classificacao_global()
+                                st.session_state.rodada_atual += 1
+                                if st.session_state.rodada_atual <= 5: gerar_rodada_com_travas()
+                                else: st.session_state.aguardando_escolha_mm = True
+                                salvar_estado_no_disco(); st.rerun()
+                else:
+                    st.markdown(f"### ⚡ Chave de Eliminatórias: {st.session_state.fase_matamata}")
+                    for c in st.session_state.confrontos_mm:
+                        if c["j2"] != "CHAPÉU (Folga)":
+                            renderizar_bloco_mesa_isolado(c["id_original"], c["j1"], c["j2"], sem_id)
+                        else:
+                            st.info(f"🏅 {c['j1']} avançou diretamente pelo Chapéu do chaveamento.")
+                        
+                    if is_admin and st.button("Avançar Fase do Mata-Mata", type="primary"):
+                        venc, perd = [], []
+                        for c in st.session_state.confrontos_mm:
+                            p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
+                            # Computa flores para a premiação individual
+                            st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + p[4]
+                            st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + p[5]
+                            
+                            w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
+                            if c["tipo"] == "normal": venc.append(w); perd.append(l)
+                            elif c["tipo"] == "final": st.session_state.campeao = w; st.session_state.vice_campeao = l
+                            elif c["tipo"] == "3place": st.session_state.terceiro_lugar = w; st.session_state.quarto_lugar = l
+                        
+                        f_at = st.session_state.fase_matamata
+                        if f_at == "OITAVAS DE FINAL":
+                            st.session_state.fase_matamata = "QUARTAS DE FINAL"
+                            st.session_state.confrontos_mm = [{"id_original": str(i+1), "tipo": "normal", "j1": venc[i], "j2": venc[len(venc)-1-i]} for i in range(len(venc)//2)]
+                            st.session_state.placares_rodada_atual = {str(i+1): [0,0,0,0,0,0,False] for i in range(len(venc)//2)}
+                        elif f_at == "QUARTAS DE FINAL":
+                            st.session_state.fase_matamata = "SEMIFINAL"
+                            st.session_state.confrontos_mm = [{"id_original": str(i+1), "tipo": "normal", "j1": venc[i], "j2": venc[len(venc)-1-i]} for i in range(len(venc)//2)]
+                            st.session_state.placares_rodada_atual = {str(i+1): [0,0,0,0,0,0,False] for i in range(len(venc)//2)}
+                        elif f_at == "SEMIFINAL":
+                            st.session_state.fase_matamata = "FINAIS"
+                            st.session_state.confrontos_mm = [
+                                {"id_original": "1", "tipo": "final", "j1": venc[0], "j2": venc[1]},
+                                {"id_original": "2", "tipo": "3place", "j1": perd[0], "j2": perd[1]}
+                            ]
+                            st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
+                        else:
+                            reconstruir_classificacao_global()
+                        salvar_estado_no_disco(); st.rerun()
+
+    with aba_tabela:
+        if st.session_state.classificacao is not None:
+            st.markdown("### 📊 Tabela Geral Classificatória")
+            st.table(st.session_state.classificacao.sort_values(by=['Vitorias','Sets_Ganhos','Saldo_Tentos'], ascending=False))
+            
+            # AUDITORIA RETROATIVA PRESERVADA 
+            if is_admin and st.session_state.historico_rodadas:
+                st.markdown("---")
+                st.markdown("### 🔍 Painel de Auditoria e Edições Retroativas")
+                r_alvo = st.selectbox("Selecione a Rodada Passada:", list(st.session_state.historico_rodadas.keys()))
+                if r_alvo:
+                    mesas_auditoria = st.session_state.historico_rodadas[r_alvo]
+                    for m_id, dados in list(mesas_auditoria.items()):
+                        if not dados.get("is_chapeu", False):
+                            st.write(f"**Mesa {m_id}: {dados['j1']} vs {dados['j2']}**")
+                            c_au1, c_au2, c_au3 = st.columns(3)
+                            with c_au1:
+                                ns1 = st.number_input(f"Sets {dados['j1']}", 0, 2, int(dados['s1']), key=f"ret_s1_{r_alvo}_{m_id}")
+                                ns2 = st.number_input(f"Sets {dados['j2']}", 0, 2, int(dados['s2']), key=f"ret_s2_{r_alvo}_{m_id}")
+                            with c_au2:
+                                nt1 = st.number_input(f"Tentos {dados['j1']}", 0, 72, int(dados['t1']), key=f"ret_t1_{r_alvo}_{m_id}")
+                                nt2 = st.number_input(f"Tentos {dados['j2']}", 0, 72, int(dados['t2']), key=f"ret_t2_{r_alvo}_{m_id}")
+                            with c_au3:
+                                nf1 = st.number_input(f"Flores {dados['j1']}", 0, 20, int(dados['f1']), key=f"ret_f1_{r_alvo}_{m_id}")
+                                nf2 = st.number_input(f"Flores {dados['j2']}", 0, 20, int(dados['f2']), key=f"ret_f2_{r_alvo}_{m_id}")
+                            
+                            if st.button(f"💾 Atualizar Histórico Mesa {m_id}", key=f"btn_ret_{r_alvo}_{m_id}"):
+                                st.session_state.historico_rodadas[r_alvo][m_id].update({"s1": ns1, "s2": ns2, "t1": nt1, "t2": nt2, "f1": nf1, "f2": nf2})
+                                reconstruir_classificacao_global()
+                                st.success("Placar recalculado retroativamente!")
+                                st.rerun()
+
+    with aba_historico:
+        st.markdown("### 📜 Registros Históricos e Campeões")
         if os.path.exists(ARQUIVO_GALERIA):
             try:
                 with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg_check = json.load(f)
                 if dg_check:
-                    st.markdown("#### 🛠️ Painel de Exclusão Seletiva (Exclusivo Técnico)")
-                    opcoes_torneios = [f"{idx} - {t.get('Torneio')} ({t.get('Data')}) -> Campeão: {t.get('Campeao')}" for idx, t in enumerate(dg_check)]
-                    torneio_para_deletar = st.selectbox("Selecione o registro específico para remover da história:", opcoes_torneios)
-                    
-                    c_confirma = st.checkbox("Confirmo que desejo deletar permanentemente APENAS este torneio selecionado", key="check_del_seletivo")
-                    
-                    if st.button("🗑️ Excluir Registro Selecionado", disabled=not c_confirma):
-                        idx_alvo = int(torneio_para_deletar.split(" - ")[0])
-                        dg_check.pop(idx_alvo)
-                        with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f:
-                            json.dump(dg_check, f, ensure_ascii=False, indent=4)
-                        st.success("Torneio removido com sucesso!")
-                        st.rerun()
-                    st.markdown("---")
-            except Exception: pass
-
-    # Exibição Tradicional dos Cards
-    if os.path.exists(ARQUIVO_GALERIA):
-        try:
-            with open(ARQUIVO_GALERIA, "r", encoding="utf-8") as f: dg = json.load(f)
-            if dg:
-                for registro in reversed(dg):
-                    st.markdown(f"""
-                        <div class="galeria-card">
-                            <div class="galeria-header">
-                                <span class="galeria-titulo-evento">🏆 {registro.get('Torneio', 'Torneio sem Nome')}</span>
-                                <span class="galeria-data">📅 Data: {registro.get('Data', 'N/A')}</span>
+                    for idx, t in enumerate(dg_check):
+                        st.markdown(f"""
+                            <div class="galeria-card">
+                                <div style="color:#e5c158; font-weight:900; font-size:1.1rem;">🏆 {t.get('Torneio')}</div>
+                                <div style="font-size:0.8rem; color:#a4c2b7; margin-bottom:8px;">📅 Data de Conclusão: {t.get('Data')}</div>
+                                🥇 Campeão: <b>{t.get('Campeao')}</b> | 🥈 Vice: {t.get('Vice')}<br>
+                                🥉 Terceiro: {t.get('Terceiro')} | 🏅 Quarto: {t.get('Quarto')}
                             </div>
-                            <div class="galeria-corpo">
-                                <div class="galeria-linha-campeao">🥇 Grande Campeão: <span class="galeria-ouro">{registro.get('Campeao', 'N/A')}</span></div>
-                                <div class="galeria-linha-secundaria">🥈 Vice-Campeão: {registro.get('Vice', 'N/A')}</div>
-                                <div class="galeria-linha-secundaria">🥉 3º Colocado: {registro.get('Terceiro', 'N/A')} &nbsp;|&nbsp; 🏅 4º Colocado: {registro.get('Quarto', 'N/A')}</div>
-                                <div class="galeria-linha-secundaria" style="margin-top: 5px; color: #ff69b4 !important;">🌸 Rei da Flor: {registro.get('ReiDaFlor', 'N/A')}</div>
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
-            else: st.info("A galeria está vazia por enquanto.")
-        except Exception: st.info("A galeria está vazia por enquanto.")
-    else: st.info("Nenhum torneio foi imortalizado nesta galeria ainda.")
+                        """, unsafe_allow_html=True)
+                    
+                    if is_admin:
+                        st.markdown("---")
+                        opcoes_torneios = [f"{idx} - {t.get('Torneio')} ({t.get('Data')})" for idx, t in enumerate(dg_check)]
+                        torneio_para_deletar = st.selectbox("Deletar registro específico da galeria:", opcoes_torneios)
+                        c_confirma = st.checkbox("Confirmo a remoção permanente deste item do histórico", key="check_del_seletivo")
+                        if st.button("🗑️ Remover Registro do Histórico", disabled=not c_confirma):
+                            idx_alvo = int(torneio_para_deletar.split(" - ")[0])
+                            dg_check.pop(idx_alvo)
+                            with open(ARQUIVO_GALERIA, "w", encoding="utf-8") as f: json.dump(dg_check, f, indent=4)
+                            st.success("Item removido!"); st.rerun()
+                else: st.info("Nenhum torneio arquivado até o momento.")
+            except: st.info("Nenhum torneio arquivado até o momento.")
+        else: st.info("Nenhum torneio arquivado até o momento.")
 
 st.markdown(f'<div class="creditos">💻 {NOME_CRIADOR} © 2026</div>', unsafe_allow_html=True)
