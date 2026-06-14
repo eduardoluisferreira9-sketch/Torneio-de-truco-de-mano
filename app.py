@@ -223,7 +223,8 @@ def salvar_estado_no_disco():
         "quarto_lugar": st.session_state.quarto_lugar,
         "placares_rodada_atual": st.session_state.placares_rodada_atual,
         "semente_reset": st.session_state.get("semente_reset", 1),
-        "aguardando_escolha_mm": st.session_state.get("aguardando_escolha_mm", False)
+        "aguardando_escolha_mm": st.session_state.get("aguardando_escolha_mm", False),
+        "flores_acumuladas_matamata": st.session_state.get("flores_acumuladas_matamata", {})
     }
     if st.session_state.classificacao is not None:
         estado["classificacao"] = st.session_state.classificacao.to_dict(orient="index")
@@ -251,6 +252,7 @@ def carregar_estado_do_disco():
             st.session_state.placares_rodada_atual = estado.get("placares_rodada_atual", {})
             st.session_state.semente_reset = estado.get("semente_reset", 1)
             st.session_state.aguardando_escolha_mm = estado.get("aguardando_escolha_mm", False)
+            st.session_state.flores_acumuladas_matamata = estado.get("flores_acumuladas_matamata", {})
             if estado.get("nome_torneio"):
                 st.session_state.nome_torneio = estado.get("nome_torneio")
             if estado.get("classificacao") is not None:
@@ -281,15 +283,18 @@ if "jogadores" not in st.session_state:
     st.session_state.nome_torneio = "Torneio de Truco"
     st.session_state.jogador_sendo_editado = None
     st.session_state.aguardando_escolha_mm = False
+    st.session_state.flores_acumuladas_matamata = {}
 
 carregar_estado_do_disco()
 
 def reconstruir_classificacao_global():
+    # 1. Recria a tabela base zerada
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
         'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0
     }).set_index('Jogador')
     
+    # 2. Computa a fase de classificação
     for r_num, mesas in st.session_state.historico_rodadas.items():
         for m_id, dados in mesas.items():
             if dados.get("is_chapeu", False):
@@ -307,6 +312,12 @@ def reconstruir_classificacao_global():
                 st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1]
                 st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2]
                 
+    # 3. 🌸 BLINDAGEM DAS FLORES DO MATA-MATA (Evita o desconto/sumiço na final)
+    if "flores_acumuladas_matamata" in st.session_state:
+        for jogador, flores_mm in st.session_state.flores_acumuladas_matamata.items():
+            if jogador in st.session_state.classificacao.index:
+                st.session_state.classificacao.loc[jogador, 'Flores'] += flores_mm
+
     st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
     salvar_estado_no_disco()
 
@@ -321,16 +332,12 @@ def ja_se_enfrentaram(j1, j2):
 def gerar_rodada_com_travas():
     limpar_placares_memoria()
     
-    if st.session_state.rodada_atual == 1:
-        lista_rodada = list(st.session_state.jogadores)
-        random.shuffle(lista_rodada)
-    else:
-        df_ord = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
-        lista_rodada = list(df_ord.index)
+    # 🎲 SISTEMA DE SORTEIO 100% ALEATÓRIO E SEGURO
+    lista_rodada = list(st.session_state.jogadores)
+    random.shuffle(lista_rodada)
 
     st.session_state.confrontos = []
     
-    # Gerencia o Chapéu se for ímpar
     if len(lista_rodada) % 2 != 0:
         cand_chapeu = [j for j in lista_rodada if j not in st.session_state.jogadores_no_chapeu]
         chapeu = random.choice(cand_chapeu if cand_chapeu else lista_rodada)
@@ -338,7 +345,6 @@ def gerar_rodada_com_travas():
         st.session_state.jogadores_no_chapeu.add(chapeu)
         st.session_state.confrontos.append((chapeu, "CHAPÉU (Folga)"))
 
-    # Algoritmo de emparelhamento sem repetição (Garantia de Lei)
     pares_definidos = []
     while len(lista_rodada) > 0:
         j1 = lista_rodada[0]
@@ -355,12 +361,10 @@ def gerar_rodada_com_travas():
         if par_encontrado:
             pares_definidos.append((j1, par_encontrado))
         else:
-            # Força contingência caso trave matematicamente
             par_encontrado = lista_rodada[1]
             lista_rodada.pop(1)
             lista_rodada.pop(0)
-            制造_par = (j1, par_encontrado)
-            pares_definidos.append(制造_par)
+            pares_definidos.append((j1, par_encontrado))
 
     contador_mesa = 1
     for j1, j2 in pares_definidos:
@@ -382,7 +386,6 @@ def iniciar_fase_matamata_manual(vagas, nome_fase):
     df_classificado = st.session_state.classificacao.sort_values(by=['Vitorias', 'Sets_Ganhos', 'Saldo_Tentos'], ascending=False)
     lista_vivos = list(df_classificado.index[:vagas])
     
-    # Preenchimento automático para blindar contra chaves incompletas (Bye system)
     while len(lista_vivos) < vagas:
         lista_vivos.append("CHAPÉU (Folga)")
         
@@ -393,7 +396,6 @@ def iniciar_fase_matamata_manual(vagas, nome_fase):
         j1 = lista_vivos[i]
         j2 = lista_vivos[n-1-i]
         
-        # Se um dos dois for Folga, já avança por W.O técnico invisível para evitar crash
         if j2 == "CHAPÉU (Folga)" and j1 != "CHAPÉU (Folga)":
             st.session_state.confrontos_mm.append({"id_original": id_m, "tipo": "normal", "j1": j1, "j2": j2})
             st.session_state.placares_rodada_atual[id_m] = [2, 0, 72, 0, 0, 0, True]
@@ -515,6 +517,14 @@ with st.sidebar:
         if st.button("⏹️ Pausar Cronômetro"):
             st.session_state.cronometro_ativo = False
             salvar_estado_no_disco(); st.rerun()
+        
+        if st.session_state.torneio_iniciado and not st.session_state.em_matamata and not st.session_state.get("aguardando_escolha_mm", False):
+            st.markdown("---")
+            if st.button("🔄 Refazer Sorteio Desta Rodada"):
+                gerar_rodada_com_travas()
+                st.success("Rodada re-sorteada de forma aleatória com sucesso!")
+                st.rerun()
+                
         st.markdown("---")
         if st.button("🗑️ Limpar Galeria de Campeões", type="secondary"):
             if os.path.exists(ARQUIVO_GALERIA): os.remove(ARQUIVO_GALERIA)
@@ -560,9 +570,9 @@ with aba_arena:
         st.write(f"**Inscritos ({len(st.session_state.jogadores)}):**")
         if st.session_state.jogadores:
             if is_admin:
-                for idx, jogador in enumerate(st.session_state.jogadores):
+                for idx, player in enumerate(st.session_state.jogadores):
                     c_nome, c_edit, c_excluir = st.columns([6, 1.5, 1.5])
-                    with c_nome: st.markdown(f"🔹 **{jogador}**")
+                    with c_nome: st.markdown(f"🔹 **{player}**")
                     with c_edit:
                         st.markdown('<div class="botao-editar">', unsafe_allow_html=True)
                         if st.button(f"✏️ Editar", key=f"btn_edit_{idx}"):
@@ -761,7 +771,6 @@ with aba_arena:
                     
                     st.markdown(f'<div class="titulo-mesa-destaque">{tit}</div>', unsafe_allow_html=True)
                     
-                    # Se for uma mesa com W.O automático/Folga, avisa e congela
                     if j2 == "CHAPÉU (Folga)":
                         st.success(f"💚 **{j1}** classificado automaticamente nesta chave por W.O. técnico (Folga de Emparelhamento).")
                     else:
@@ -786,11 +795,19 @@ with aba_arena:
                                     st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos de tentos para 2x1."); erro_mm = True
                         
                         if not erro_mm:
+                            # Garante que a estrutura de flores do mata-mata existe
+                            if "flores_acumuladas_matamata" not in st.session_state:
+                                st.session_state.flores_acumuladas_matamata = {}
+
                             venc, perd = [], []
                             for c in st.session_state.confrontos_mm:
                                 p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
-                                if c["j1"] != "CHAPÉU (Folga)": st.session_state.classificacao.loc[c["j1"], 'Flores'] += p[4]
-                                if c["j2"] != "CHAPÉU (Folga)": st.session_state.classificacao.loc[c["j2"], 'Flores'] += p[5]
+                                
+                                # Acumula as flores com segurança de persistência
+                                if c["j1"] != "CHAPÉU (Folga)": 
+                                    st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + p[4]
+                                if c["j2"] != "CHAPÉU (Folga)": 
+                                    st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + p[5]
                                 
                                 w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
                                 if c["tipo"]=="normal": venc.append(w); perd.append(l)
@@ -799,12 +816,10 @@ with aba_arena:
 
                             f_at = st.session_state.fase_matamata
                             
-                            # Filtros para garantir que folgas não avancem fisicamente de forma quebrada
                             venc = [v for v in venc if v != "CHAPÉU (Folga)"]
                             perd = [p for p in perd if p != "CHAPÉU (Folga)"]
 
                             if f_at == "OITAVAS DE FINAL":
-                                # Ajusta chaves para Quartas
                                 while len(venc) < 8: venc.append("CHAPÉU (Folga)")
                                 limpar_placares_memoria()
                                 st.session_state.fase_matamata = "QUARTAS DE FINAL"
@@ -831,7 +846,6 @@ with aba_arena:
                             elif f_at == "SEMIFINAL":
                                 limpar_placares_memoria()
                                 st.session_state.fase_matamata = "FINAL E TERCEIRO"
-                                # Blindagem para finais completas
                                 j_f1 = venc[0] if len(venc) > 0 else "Finalista A"
                                 j_f2 = venc[1] if len(venc) > 1 else "Finalista B"
                                 j_p1 = perd[0] if len(perd) > 0 else "Disputa A"
@@ -842,6 +856,8 @@ with aba_arena:
                                     {"id_original": "2", "tipo": "3place", "j1": j_p1, "j2": j_p2}
                                 ]
                                 st.session_state.placares_rodada_atual = {"1": [0,0,0,0,0,0,False], "2": [0,0,0,0,0,0,False]}
+                            
+                            reconstruir_classificacao_global()
                             salvar_estado_no_disco(); st.rerun()
 
 # --- ABA 2: CLASSIFICAÇÃO GERAL E HISTÓRICO RETROATIVO ---
