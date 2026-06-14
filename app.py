@@ -288,35 +288,46 @@ if "jogadores" not in st.session_state:
 carregar_estado_do_disco()
 
 def reconstruir_classificacao_global():
-    # 1. Recria a tabela base zerada
+    # 1. Recria a tabela base zerada com todos os jogadores inscritos
     st.session_state.classificacao = pd.DataFrame({
         'Jogador': st.session_state.jogadores, 'Vitorias': 0, 'Sets_Ganhos': 0, 
         'Tentos_Pro': 0, 'Tentos_Contra': 0, 'Saldo_Tentos': 0, 'Flores': 0
     }).set_index('Jogador')
     
-    # 2. Computa a fase de classificação
-    for r_num, mesas in st.session_state.historico_rodadas.items():
+    # 2. Computa a fase de classificação (As 5 Rodadas) - REVISADO E BLINDADO
+    for r_num, mesas in list(st.session_state.historico_rodadas.items()):
         for m_id, dados in mesas.items():
             if dados.get("is_chapeu", False):
-                st.session_state.classificacao.loc[dados["j1"], ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
+                if dados["j1"] in st.session_state.classificacao.index:
+                    st.session_state.classificacao.loc[dados["j1"], ['Vitorias', 'Sets_Ganhos', 'Tentos_Pro']] += [1, 3, 72]
             else:
                 j1, j2 = dados["j1"], dados["j2"]
-                s1, s2, t1, t2, f1, f2 = dados["s1"], dados["s2"], dados["t1"], dados["t2"], dados["f1"], dados["f2"]
                 
-                s1_c = 3 if (s1 == 2 and s2 == 0) else s1
-                s2_c = 3 if (s2 == 2 and s1 == 0) else s2
+                if j1 in st.session_state.classificacao.index and j2 in st.session_state.classificacao.index:
+                    # Coleta explícita e conversão limpa para evitar perdas ou distorções de strings
+                    s1 = int(dados.get("s1", 0))
+                    s2 = int(dados.get("s2", 0))
+                    t1 = int(dados.get("t1", 0))
+                    t2 = int(dados.get("t2", 0))
+                    
+                    # CAPTURA MATEMÁTICA ISOLADA DAS FLORES DO HISTÓRICO
+                    f1_gravado = int(dados.get("f1", 0))
+                    f2_gravado = int(dados.get("f2", 0))
+                    
+                    s1_c = 3 if (s1 == 2 and s2 == 0) else s1
+                    s2_c = 3 if (s2 == 2 and s1 == 0) else s2
+                    
+                    v1 = 1 if s1 > s2 else 0
+                    v2 = 1 if s2 > s1 else 0
+                    
+                    st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1_gravado]
+                    st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2_gravado]
                 
-                v1 = 1 if s1 > s2 else 0
-                v2 = 1 if s2 > s1 else 0
-                
-                st.session_state.classificacao.loc[j1, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v1, s1_c, t1, t2, f1]
-                st.session_state.classificacao.loc[j2, ['Vitorias','Sets_Ganhos','Tentos_Pro','Tentos_Contra','Flores']] += [v2, s2_c, t2, t1, f2]
-                
-    # 3. 🌸 BLINDAGEM DAS FLORES DO MATA-MATA (Evita o desconto/sumiço na final)
+    # 3. 🌸 Acumula as flores do Mata-Mata de forma isolada e persistente
     if "flores_acumuladas_matamata" in st.session_state:
         for jogador, flores_mm in st.session_state.flores_acumuladas_matamata.items():
             if jogador in st.session_state.classificacao.index:
-                st.session_state.classificacao.loc[jogador, 'Flores'] += flores_mm
+                st.session_state.classificacao.loc[jogador, 'Flores'] += int(flores_mm)
 
     st.session_state.classificacao['Saldo_Tentos'] = st.session_state.classificacao['Tentos_Pro'] - st.session_state.classificacao['Tentos_Contra']
     salvar_estado_no_disco()
@@ -332,7 +343,6 @@ def ja_se_enfrentaram(j1, j2):
 def gerar_rodada_com_travas():
     limpar_placares_memoria()
     
-    # 🎲 SISTEMA DE SORTEIO 100% ALEATÓRIO E SEGURO
     lista_rodada = list(st.session_state.jogadores)
     random.shuffle(lista_rodada)
 
@@ -795,7 +805,6 @@ with aba_arena:
                                     st.error(f"❌ Erro na Mesa {c['id_original']}: Verifique os mínimos de tentos para 2x1."); erro_mm = True
                         
                         if not erro_mm:
-                            # Garante que a estrutura de flores do mata-mata existe
                             if "flores_acumuladas_matamata" not in st.session_state:
                                 st.session_state.flores_acumuladas_matamata = {}
 
@@ -803,11 +812,11 @@ with aba_arena:
                             for c in st.session_state.confrontos_mm:
                                 p = st.session_state.placares_rodada_atual.get(c["id_original"], [0,0,0,0,0,0,False])
                                 
-                                # Acumula as flores com segurança de persistência
+                                # Acumulação protegida no dicionário do mata-mata
                                 if c["j1"] != "CHAPÉU (Folga)": 
-                                    st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + p[4]
+                                    st.session_state.flores_acumuladas_matamata[c["j1"]] = st.session_state.flores_acumuladas_matamata.get(c["j1"], 0) + int(p[4])
                                 if c["j2"] != "CHAPÉU (Folga)": 
-                                    st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + p[5]
+                                    st.session_state.flores_acumuladas_matamata[c["j2"]] = st.session_state.flores_acumuladas_matamata.get(c["j2"], 0) + int(p[5])
                                 
                                 w, l = (c["j1"], c["j2"]) if p[0] >= p[1] else (c["j2"], c["j1"])
                                 if c["tipo"]=="normal": venc.append(w); perd.append(l)
@@ -885,16 +894,16 @@ with aba_tabela:
                             col_e1, col_e2 = st.columns(2)
                             with col_e1:
                                 st.write(f"🥇 Controles {j1}")
-                                st.number_input(f"Sets ({j1})", 0, 2, int(dados["s1"]), key=f"ret_s1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Tentos ({j1})", 0, 72, int(dados["t1"]), key=f"ret_t1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Flores ({j1})", 0, 20, int(dados["f1"]), key=f"ret_f1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Sets ({j1})", 0, 2, int(dados.get("s1",0)), key=f"ret_s1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Tentos ({j1})", 0, 72, int(dados.get("t1",0)), key=f"ret_t1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Flores ({j1})", 0, 20, int(dados.get("f1",0)), key=f"ret_f1_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                             with col_e2:
                                 st.write(f"🥈 Controles {j2}")
-                                st.number_input(f"Sets ({j2})", 0, 2, int(dados["s2"]), key=f"ret_s2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Tentos ({j2})", 0, 72, int(dados["t2"]), key=f"ret_t2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
-                                st.number_input(f"Flores ({j2})", 0, 20, int(dados["f2"]), key=f"ret_f2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Sets ({j2})", 0, 2, int(dados.get("s2",0)), key=f"ret_s2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Tentos ({j2})", 0, 72, int(dados.get("t2",0)), key=f"ret_t2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
+                                st.number_input(f"Flores ({j2})", 0, 20, int(dados.get("f2",0)), key=f"ret_f2_{r_selecionada}_{m_id}", on_change=salvar_mudanca_retroativa, args=(r_selecionada, m_id, j1, j2))
                         else:
-                            st.markdown(f"👉 **Placar Registrado:** {dados['s1']}s {dados['t1']}t (🌸{dados['f1']}fl)  **VS** {dados['s2']}s {dados['t2']}t (🌸{dados['f2']}fl)")
+                            st.markdown(f"👉 **Placar Registrado:** {dados.get('s1',0)}s {dados.get('t1',0)}t (🌸{dados.get('f1',0)}fl)  **VS** {dados.get('s2',0)}s {dados.get('t2',0)}t (🌸{dados.get('f2',0)}fl)")
                         st.markdown("---")
 
 # --- ABA 3: GALERIA DE CAMPEÕES ---
